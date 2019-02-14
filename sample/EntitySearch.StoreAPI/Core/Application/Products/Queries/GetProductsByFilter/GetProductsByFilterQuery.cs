@@ -23,6 +23,7 @@ namespace EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductsByF
         {
             PageNumber = 0;
             PageSize = 10;
+            OrderBy = "ProductID";
             Order = Order.Ascending;
         }
     }

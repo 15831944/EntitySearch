@@ -9,7 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{413A
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EntitySearch", "src\EntitySearch\EntitySearch.csproj", "{5CCB4E18-432F-43CB-AE2C-BA7E2D3C858A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EntitySearch.StoreAPI", "sample\EntitySearch.SampleAPI\EntitySearch.StoreAPI.csproj", "{D87A3BD4-8D36-43B8-A30B-5EC29E7807F6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EntitySearch.StoreAPI", "sample\EntitySearch.StoreAPI\EntitySearch.StoreAPI.csproj", "{D87A3BD4-8D36-43B8-A30B-5EC29E7807F6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

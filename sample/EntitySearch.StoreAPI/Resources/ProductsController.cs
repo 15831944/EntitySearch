@@ -21,11 +21,11 @@ namespace EntitySearch.StoreAPI.Resources
 
         // GET api/values
         [HttpGet]
-        public async Task<ActionResult<GetProductsByFilterQueryResponse>> Get([FromQuery]GetProductsByFilterQuery query)
+        public async Task<ActionResult<GetProductsByFilterQueryResponse>> Get([FromQuery]GetProductsByFilterQuery request)
         {
             try
             {
-                return Ok(await Mediator.Send(query));
+                return Ok(await Mediator.Send(request));
             }
             catch (Exception ex)
             {
