@@ -7,5 +7,6 @@ namespace EntitySearch.StoreAPI.Core.Application.Products.Commands.PostProduct
 {
     public class PostProductCommandResponse
     {
+        public string Message { get; set; }
     }
 }
