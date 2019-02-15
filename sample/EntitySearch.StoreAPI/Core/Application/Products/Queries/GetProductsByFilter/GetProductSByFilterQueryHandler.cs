@@ -24,7 +24,7 @@ namespace EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductsByF
             query = query.Search(request.Query);
 
             var resultCount = await query.CountAsync(cancellationToken);
-            var results = await query.ToListAsync(cancellationToken);
+            var results = await query.OrderBy("Descending","Value").ToListAsync(cancellationToken);
 
             return new GetProductsByFilterQueryResponse
             {
