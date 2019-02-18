@@ -1,9 +1,11 @@
-﻿using EntitySearch.StoreAPI.Core.Infrastructures.Data.Contexts;
+﻿using EntitySearch.StoreAPI.Core.Domain.Entities;
+using EntitySearch.StoreAPI.Core.Infrastructures.Data.Contexts;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,11 +22,11 @@ namespace EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductsByF
         public async Task<GetProductsByFilterQueryResponse> Handle(GetProductsByFilterQuery request, CancellationToken cancellationToken)
         {
             var query = Context.Products.AsQueryable();
-
             query = query.Search(request.Query);
-
+            
             var resultCount = await query.CountAsync(cancellationToken);
-            var results = await query.OrderBy("Descending","Value").ToListAsync(cancellationToken);
+            var results = await query.ToListAsync(cancellationToken);
+            //var results = await query.Where(x=>x.Name.ToLower().Contains("madden")).ToListAsync(cancellationToken);
 
             return new GetProductsByFilterQueryResponse
             {

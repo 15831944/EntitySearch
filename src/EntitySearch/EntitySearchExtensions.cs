@@ -8,7 +8,141 @@ namespace EntitySearch
 {
     public static class EntitySearchExtensions
     {
-        public static IQueryable<TSource> Search<TSource>(this IQueryable<TSource> source, string query) where TSource : class
+        public static IQueryable<TSource> Search<TSource>(this IQueryable<TSource> source, string query)
+            where TSource : class
+        {
+            if (string.IsNullOrWhiteSpace(query))
+                return source;
+
+            var queryTokens = BreakQuery(query);
+            var containsExp = GenerateContainsExpression<TSource>(queryTokens);
+            //var lambdaArgs = GenerateSearchLambdaExpression(GenerateContainsExpression());
+
+            return source.Where(containsExp);
+        }
+        private static Expression<Func<TSource, bool>> GenerateContainsExpression<TSource>(List<string> tokens)
+        {
+            List<Expression> expressions = new List<Expression>();
+
+            var xExp = Expression.Parameter(typeof(TSource), "x");
+            
+            foreach(var property in typeof(TSource).GetProperties())
+            {
+                var propertyExp = Expression.MakeMemberAccess(xExp, property);
+                
+                var method = property.PropertyType.GetMethods().SingleOrDefault(x => x.Name == "ToString" && x.GetParameters().Length == 0);
+                var toStringExp = Expression.Call(propertyExp, method);
+
+                method = typeof(string).GetMethods().SingleOrDefault(x => x.Name == "ToLower" && x.GetParameters().Length == 0);
+
+                var toLowerExp = Expression.Call(toStringExp, method);
+
+                method = typeof(string).GetMethods().SingleOrDefault(x => x.Name == "Contains" && x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == typeof(string));
+
+                foreach(var token in tokens)
+                {
+                    var tokenExp = Expression.Constant(token, typeof(string));
+                    var containsExp = Expression.Call(toLowerExp, method, tokenExp);
+                    expressions.Add(containsExp);
+                }
+            }
+
+            Expression orExp = Expression.Empty();
+            if (expressions.Count == 1)
+                orExp = expressions[0];
+            else
+            {
+                orExp = Expression.Or(expressions[0], expressions[1]);
+
+                for (int i = 2; i < expressions.Count; i++)
+                {
+                    orExp = Expression.Or(orExp, expressions[i]);
+                }
+            }
+
+            return Expression.Lambda<Func<TSource, bool>>(orExp, xExp);
+        }
+
+        private static Expression<Func<TSource, bool>> GenerateContainsExpression2<TSource>(IQueryable<string> tokens)
+        {
+            var xExp = Expression.Parameter(typeof(TSource), "x");
+            var yExp = Expression.Parameter(typeof(string), "y");
+
+            var tokenExp = Expression.Constant(tokens, typeof(IQueryable<string>));
+
+            var property = typeof(TSource).GetProperties()[1];
+
+            var propertyExp = Expression.MakeMemberAccess(xExp, property);
+            var method = property.PropertyType.GetMethods().SingleOrDefault(x => x.Name == "ToString" && x.GetParameters().Length == 0);
+            var toStringExp = Expression.Call(propertyExp, method);
+
+            method = typeof(string).GetMethods().SingleOrDefault(x => x.Name == "ToLower" && x.GetParameters().Length == 0);
+
+            var toLowerExp = Expression.Call(toStringExp, method);
+
+            method = typeof(string).GetMethods().SingleOrDefault(x => x.Name == "Contains" && x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == typeof(string));
+
+            var containsExp = Expression.Call(toLowerExp, method, yExp);
+
+            var yLambda = Expression.Lambda<Func<string, bool>>(containsExp, yExp);
+            var methodAny = typeof(Queryable).GetMethods().SingleOrDefault(
+                x => x.Name == "Any"
+                && x.IsGenericMethodDefinition
+                && x.GetGenericArguments().Length == 1
+                && x.GetParameters().Length == 2);
+
+            var anyExp = Expression.Call(tokenExp, methodAny, yLambda);
+
+            return Expression.Lambda<Func<TSource, bool>>(containsExp, yExp);
+        }
+        private static Expression<Func<TSource,bool>> GenerateContainsExpression1<TSource>(List<string> tokens)
+        {
+            var xExp = Expression.Parameter(typeof(TSource), "x");
+            var yExp = Expression.Parameter(typeof(string), "y");
+
+            var constExp = Expression.Constant("madden", typeof(string));
+            //var tokenExp = Expression.Constant(tokens, typeof(List<string>));
+
+            var property = typeof(TSource).GetProperties()[1];
+
+            var propertyExp = Expression.MakeMemberAccess(xExp, property);
+            var method = property.PropertyType.GetMethods().SingleOrDefault(x => x.Name == "ToString" && x.GetParameters().Length == 0);
+            var toStringExp = Expression.Call(propertyExp, method);
+
+            method = typeof(string).GetMethods().SingleOrDefault(x => x.Name == "ToLower" && x.GetParameters().Length == 0);
+
+            var toLowerExp = Expression.Call(toStringExp, method);
+
+            method = typeof(string).GetMethods().SingleOrDefault(x => x.Name == "Contains" && x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == typeof(string));
+
+            var containsExp = Expression.Call(toLowerExp, method, constExp);
+
+            var yLambda = Expression.Lambda<Func<TSource, bool>>(containsExp, xExp);
+            //var methodAny = typeof(Queryable).GetMethods().SingleOrDefault(
+            //    x => x.Name == "Any"
+            //    && x.IsGenericMethodDefinition
+            //    && x.GetGenericArguments().Length == 1
+            //    && x.GetParameters().Length == 2);
+            
+            //var anyExp = Expression.Call(tokenExp, methodAny, yLambda);
+
+            //Expression<Func<TSource, bool>> args = (x) => tokens.Any(yLambda);
+
+            return yLambda;
+        }
+
+        private static Expression GenerateSearchLambdaExpression<TSource>(Expression body, params ParameterExpression[] parameters)
+        {
+            var delegateType = typeof(Func<,>).MakeGenericType(typeof(TSource), typeof(bool));
+            return Expression.Lambda(delegateType, body, parameters);
+        }
+
+        private static List<string> BreakQuery(string query)
+        {
+            return query.Split(" ").ToList();
+        }
+
+        public static IQueryable<TSource> Search_Old1<TSource>(this IQueryable<TSource> source, string query) where TSource : class
         {
             if (string.IsNullOrWhiteSpace(query))
                 return source;
@@ -95,50 +229,57 @@ namespace EntitySearch
         
         public static LambdaExpression GenereteContainsLambdaExpression<T>(ref Type type, List<string> queryTokens)
         {
-            ParameterExpression parameterExp = Expression.Parameter(type, "x");
+            var xExp = Expression.Parameter(type, "x");
+            var yExp = Expression.Parameter(typeof(string), "y");
 
-            var queryTokensExp = Expression.Constant(queryTokens.AsQueryable(), typeof(IQueryable<string>));
+            var queryTokensExp = Expression.Parameter(typeof(IQueryable<string>), "queryTokens");
 
-            Expression exp = parameterExp;
+            var exps = new List<Expression>();
 
             foreach (PropertyInfo property in typeof(T).GetProperties())
             {
-                var propertyExp = Expression.Property(exp, property);
-                exp = Expression.MakeMemberAccess(exp, property);
+                var propertyExp = Expression.MakeMemberAccess(xExp, property);
                 type = property.PropertyType;
-                MethodInfo method = type.GetMethod("Contains");
-                
-                if(method == null)
-                {
-                    method = type.GetMethods().SingleOrDefault(x => x.Name == "ToString" && x.GetParameters().Length == 0);
-                    var toStringExp = Expression.Call(propertyExp, method);
+                var method = type.GetMethods().SingleOrDefault(x => x.Name == "ToString" && x.GetParameters().Length == 0);
+                var toStringExp = Expression.Call(propertyExp, method);
 
-                    var yExp = Expression.Parameter(typeof(string),"y");
-
-                    method = typeof(string).GetMethods().SingleOrDefault(x => x.Name == "Contains" && x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == typeof(string));
+                method = typeof(string).GetMethods().SingleOrDefault(x => x.Name == "Contains" && x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == typeof(string));
                                         
-                    var containsExp = Expression.Call(toStringExp, method, yExp);
+                var containsExp = Expression.Call(toStringExp, method, yExp);
 
-                    method = typeof(Queryable).GetMethods().SingleOrDefault(
-                            x => x.Name == "Any"
-                            && x.IsGenericMethodDefinition
-                            && x.GetGenericArguments().Length == 1
-                            && x.GetParameters().Length == 2);
-
-                    var yLambda = Expression.Lambda<Func<string,bool>>(containsExp, yExp);
-                    var xLambda = Expression.Lambda<Func<T, bool>>(yLambda, parameterExp);
-                    var anyExp = Expression.Call(queryTokensExp, method, yLambda);
-                }
-                else
-                {
-                    string token = "text";
-                    var constantExp = Expression.Constant(token);
-                    var containsExp = Expression.Call(propertyExp, method, constantExp);
-                }
-                //Expression.Call(propertyExp, )
+                exps.Add(containsExp);
             }
+            Expression orExp = Expression.Empty();
+            if (exps.Count == 1)
+                orExp = exps[0];
+            else
+            {
+                orExp = Expression.Or(exps[0], exps[1]);
 
-            return Expression.Lambda<Func<T, bool>>(exp, parameterExp);
+                for (int i = 2; i < exps.Count; i++)
+                {
+                    orExp = Expression.Or(orExp, exps[i]);
+                }
+            }
+            var yLambda = Expression.Lambda<Func<string, bool>>(orExp, yExp);
+
+            var methodAny = typeof(Queryable).GetMethods().SingleOrDefault(
+                x => x.Name == "Any"
+                && x.IsGenericMethodDefinition
+                && x.GetGenericArguments().Length == 1
+                && x.GetParameters().Length == 2);
+
+            
+            Type delegateType = typeof(Func<>).MakeGenericType(typeof(string));
+            var lambda = Expression.Lambda(delegateType, orExp, xExp, yExp);
+
+            methodAny.MakeGenericMethod(typeof(string))
+                .Invoke(null, new object[] { queryTokens.AsQueryable(), lambda });
+
+            methodAny.MakeGenericMethod(typeof(T), type)
+                .Invoke(null, new object[] { yLambda });
+
+            return null;
         }
     }
 }
