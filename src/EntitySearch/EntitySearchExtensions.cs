@@ -15,36 +15,110 @@ namespace EntitySearch
                 return source;
 
             var queryTokens = BreakQuery(query);
-            var containsExp = GenerateContainsExpression<TSource>(queryTokens);
+            var criteriaExp = GenerateContainsExpression<TSource>(queryTokens);
+            //var criteriaExp = PropertyToStringEqualsExpression<TSource>(query, "2");
             //var lambdaArgs = GenerateSearchLambdaExpression(GenerateContainsExpression());
 
-            return source.Where(containsExp);
+            return source.Where(criteriaExp);
+        }
+        private static Expression<Func<TSource,bool>> PropertyToStringEqualsExpression<TSource>(string property, string value)
+        {
+            Expression bodyExp;
+
+            var xExp = Expression.Parameter(typeof(TSource), "x");
+
+            var propertyInfo = typeof(TSource).GetProperty(property, BindingFlags.Instance | BindingFlags.Public);
+
+            var memberExp = Expression.MakeMemberAccess(xExp, propertyInfo);
+
+            var constantExp = Expression.Constant(value, value.GetType());
+
+            if (memberExp.Type != typeof(string))
+            {
+                var toStringMethod = memberExp.Type.GetMethods()
+                    .SingleOrDefault(x =>
+                        x.Name == "ToString"
+                        && x.GetParameters().Count() == 0
+                        && x.GetGenericArguments().Count() == 0
+                    );
+
+                var toStringExp = Expression.Call(memberExp, toStringMethod);
+
+                bodyExp = Expression.Equal(toStringExp, constantExp);
+            }
+            else
+            {
+                bodyExp = Expression.Equal(memberExp, constantExp);
+            }
+
+            return Expression.Lambda<Func<TSource, bool>>(bodyExp, xExp);
         }
         private static Expression<Func<TSource, bool>> GenerateContainsExpression<TSource>(IEnumerable<string> tokens)
         {
             List<Expression> expressions = new List<Expression>();
 
             var xExp = Expression.Parameter(typeof(TSource), "x");
-            
-            var member = typeof(TSource).GetMember("Name", BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance).SingleOrDefault();
+            //var yExp = Expression.Parameter(typeof(string), "y");
 
-            var propertyExp = Expression.MakeMemberAccess(xExp, member);
-            
-            //var method = ((PropertyInfo)member).PropertyType.GetMethods().SingleOrDefault(x => x.Name == "ToString" && x.GetParameters().Length == 0);
-            //var toStringExp = Expression.Call(propertyExp, method);
+            //var tokensExp = Expression.Constant(tokens, tokens.GetType());
 
-            //method = typeof(IQueryable<string>).GetMethods().SingleOrDefault(x => x.Name == "ToLower" && x.GetParameters().Length == 0);
-
-            //var toLowerExp = Expression.Call(toStringExp, method);
-
-            //method = typeof(IQueryable<string>).GetMethods().SingleOrDefault(x => x.Name == "Contains" && x.GetParameters().Length == 1 && x.GetParameters()[0].ParameterType == typeof(string));
-
-            foreach (var token in tokens)
+            foreach (var propertyInfo in typeof(TSource).GetProperties())
             {
-                var tokenExp = Expression.Constant(token, typeof(string));
-                //var containsExp = Expression.Call(toLowerExp, method, tokenExp);
-                var containsExp = Expression.Equal(propertyExp, tokenExp);
-                expressions.Add(containsExp);
+                Expression memberExp = Expression.MakeMemberAccess(xExp, propertyInfo);
+
+                if (memberExp.Type != typeof(string))
+                    memberExp = Expression.Call(memberExp, GetMethodFromType(memberExp.Type, "ToString", 0, 0));
+
+                memberExp = Expression.Call(memberExp, GetMethodFromType(memberExp.Type, "ToLower", 0, 0));
+                
+                foreach (var token in tokens)
+                {
+                    var tokenExp = Expression.Constant(token, typeof(string));
+                    var containsExp = Expression.Call(memberExp, GetMethodFromType(memberExp.Type,"Contains",1,0, new List<Type> { typeof(string) }), tokenExp);
+                    //var containsExp = Expression.Equal(toLowerExp, tokenExp);
+                    //var containsExp = Expression.Equal(memberExp, tokenExp);
+                    expressions.Add(containsExp);
+                }
+            }
+
+            Expression orExp = Expression.Empty();
+            if (expressions.Count == 1)
+                orExp = expressions[0];
+            else
+            {
+                orExp = Expression.Or(expressions[0], expressions[1]);
+
+                for (int i = 2; i < expressions.Count; i++)
+                {
+                    orExp = Expression.Or(orExp, expressions[i]);
+                }
+            }
+
+            return Expression.Lambda<Func<TSource, bool>>(orExp.Reduce(), xExp);
+        }
+        private static Expression<Func<TSource, bool>> GenerateContainsExpression_OK1<TSource>(IEnumerable<string> tokens)
+        {
+            List<Expression> expressions = new List<Expression>();
+
+            var xExp = Expression.Parameter(typeof(TSource), "x");
+            
+            foreach(var propertyInfo in typeof(TSource).GetProperties())
+            {
+                Expression memberExp = Expression.MakeMemberAccess(xExp, propertyInfo);
+
+                if(memberExp.Type !=typeof(string))
+                    memberExp = Expression.Call(memberExp, GetMethodFromType(memberExp.Type, "ToString", 0, 0));
+
+                memberExp = Expression.Call(memberExp, GetMethodFromType(memberExp.Type, "ToLower", 0, 0));
+                
+                foreach(var token in tokens)
+                {
+                    var tokenExp = Expression.Constant(token, typeof(string));
+                    //var containsExp = Expression.Call(toLowerExp, method, tokenExp);
+                    //var containsExp = Expression.Equal(toLowerExp, tokenExp);
+                    var containsExp = Expression.Equal(memberExp, tokenExp);
+                    expressions.Add(containsExp);
+                }
             }
 
             Expression orExp = Expression.Empty();
@@ -63,13 +137,24 @@ namespace EntitySearch
             return Expression.Lambda<Func<TSource, bool>>(orExp.Reduce(), xExp);
         }
 
+        private static MethodInfo GetMethodFromType(Type type, string methodName, int parameters, int genericArguments, List<Type> parameterTypes = null)
+        {
+            return type.GetMethods()
+                .SingleOrDefault(method =>
+                    method.Name == methodName
+                    && method.GetParameters().Count() == parameters
+                    && method.GetGenericArguments().Count() == genericArguments
+                    && (parameterTypes == null || parameterTypes.All(x=>method.GetParameters().Select(parameter=>parameter.ParameterType).Contains(x)))
+                );
+        }
+
         private static Expression<Func<TSource, bool>> GenerateContainsExpression3<TSource>(IEnumerable<string> tokens)
         {
             List<Expression> expressions = new List<Expression>();
 
             var xExp = Expression.Parameter(typeof(TSource), "x");
-            
-            foreach(var property in typeof(TSource).GetProperties())
+
+            foreach (var property in typeof(TSource).GetProperties())
             {
                 var propertyExp = Expression.MakeMemberAccess(xExp, property);
                 
@@ -182,7 +267,7 @@ namespace EntitySearch
 
         private static List<string> BreakQuery(string query)
         {
-            return query.Split(" ").ToList();
+            return query.ToLower().Split(" ").ToList();
         }
 
         public static IQueryable<TSource> Search_Old1<TSource>(this IQueryable<TSource> source, string query) where TSource : class
