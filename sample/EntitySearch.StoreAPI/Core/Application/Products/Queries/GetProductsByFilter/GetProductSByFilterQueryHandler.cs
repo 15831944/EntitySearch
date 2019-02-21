@@ -21,17 +21,11 @@ namespace EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductsByF
 
         public async Task<GetProductsByFilterQueryResponse> Handle(GetProductsByFilterQuery request, CancellationToken cancellationToken)
         {
-            var query = Context.Products.AsQueryable();
-            query = query.Search(request.Query);
+            int resultCount = 0;
+            //var query = Context.Products.AsQueryable();
             
-            var resultCount = await query.CountAsync(cancellationToken);
-            //var results = await query.ToListAsync(cancellationToken);
-
-            //Expression<Func<Product, bool>> expression1 = (x) => x.Name.ToLower().Contains("madden");
-
-            //var results = await query.Where(expression1).ToListAsync(cancellationToken);
-            //var results = await query.Where(x=>x.Name.ToLower().Contains("madden")).ToListAsync(cancellationToken);
-            var results = await query.ToListAsync(cancellationToken);
+            var results = await Context.Products.Search(request).Count(ref resultCount).OrderBy(request).Scope(request).ToListAsync(cancellationToken);
+            
 
             return new GetProductsByFilterQueryResponse
             {
