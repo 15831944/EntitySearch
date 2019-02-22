@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EntitySearch.StoreAPI.Core.Application.Products.Commands.PostProduct;
+using EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductByID;
 using EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductsByFilter;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -35,11 +36,11 @@ namespace EntitySearch.StoreAPI.Resources
 
         // GET api/values/5
         [HttpGet("{id}")]
-        public ActionResult<string> Get(int id)
+        public async Task<ActionResult<GetProductByIDQueryResponse>> Get(int id)
         {
             try
             {
-                return "value";
+                return Ok(await Mediator.Send(new GetProductByIDQuery { ProductID = id }));
             }
             catch (Exception ex)
             {

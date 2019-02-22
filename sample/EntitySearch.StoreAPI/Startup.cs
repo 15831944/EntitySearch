@@ -55,7 +55,7 @@ namespace EntitySearch.StoreAPI
 
         private async Task ContextSeedAsync(StoreContext context)
         {
-            if (true)
+            if (false)
             {
                 if (context.Products.Any())
                 {
