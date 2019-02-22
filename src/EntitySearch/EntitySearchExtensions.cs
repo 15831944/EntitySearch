@@ -17,8 +17,8 @@ namespace EntitySearch
                 return source;
             }
 
-            var queryTokens = BreakQuery(filter.Query);
-            var criteriaExp = GenerateSearchCriteriaExpression<TSource>(queryTokens);
+            var queryTokens = BreakQuery(filter.Query, filter.QueryPhrase);
+            var criteriaExp = GenerateSearchCriteriaExpression<TSource>(queryTokens, filter);
 
             return source.Where(criteriaExp);
         }
@@ -65,9 +65,9 @@ namespace EntitySearch
             count = source.Count();
             return source;
         }
-        private static List<string> BreakQuery(string query)
+        private static List<string> BreakQuery(string query, bool queryPhrase)
         {
-            return query.ToLower().Split(" ").ToList();
+            return queryPhrase ? new List<string> { query } : query.ToLower().Split(" ").ToList();
         }
         private static MethodInfo GetMethodFromType(Type type, string methodName, int parameters, int genericArguments, List<Type> parameterTypes = null)
         {
@@ -79,13 +79,14 @@ namespace EntitySearch
                     && (parameterTypes == null || parameterTypes.All(x => method.GetParameters().Select(parameter => parameter.ParameterType).Contains(x)))
                 );
         }
-        private static Expression<Func<TSource, bool>> GenerateSearchCriteriaExpression<TSource>(List<string> tokens)
+        private static Expression<Func<TSource, bool>> GenerateSearchCriteriaExpression<TSource>(List<string> tokens, IFilter<TSource> filter)
+            where TSource : class
         {
-            List<Expression> expressions = new List<Expression>();
+            List<Expression> orExpressions = new List<Expression>();
 
             var xExp = Expression.Parameter(typeof(TSource), "x");
 
-            foreach (var propertyInfo in typeof(TSource).GetProperties())
+            foreach (var propertyInfo in GetPropertiesFromType(typeof(TSource), filter.QueryProperty))
             {
                 Expression memberExp = Expression.MakeMemberAccess(xExp, propertyInfo);
 
@@ -95,15 +96,47 @@ namespace EntitySearch
                 }
 
                 memberExp = Expression.Call(memberExp, GetMethodFromType(memberExp.Type, "ToLower", 0, 0));
-
+                List<Expression> andExpressions = new List<Expression>();
                 foreach (var token in tokens)
                 {
                     var tokenExp = Expression.Constant(token, typeof(string));
                     var containsExp = Expression.Call(memberExp, GetMethodFromType(memberExp.Type, "Contains", 1, 0, new List<Type> { typeof(string) }), tokenExp);
-                    expressions.Add(containsExp);
+                    andExpressions.Add(containsExp);
                 }
+                orExpressions.Add(filter.QueryStrict ? GenerateAndExpressions(andExpressions) : GenerateOrExpression(andExpressions));
             }
 
+            Expression orExp = GenerateOrExpression(orExpressions);
+            
+            return Expression.Lambda<Func<TSource, bool>>(orExp.Reduce(), xExp);
+        }
+
+        private static IEnumerable<PropertyInfo> GetPropertiesFromType(Type type, string queryProperty)
+        {
+            return type.GetProperties().Where(x => string.IsNullOrWhiteSpace(queryProperty) || x.Name.ToLower() == queryProperty.ToLower()).ToList();
+        }
+
+        private static Expression GenerateAndExpressions(List<Expression> expressions)
+        {
+            Expression andExp = Expression.Empty();
+            if (expressions.Count == 1)
+            {
+                andExp = expressions[0];
+            }
+            else
+            {
+                andExp = Expression.And(expressions[0], expressions[1]);
+
+                for (int i = 2; i < expressions.Count; i++)
+                {
+                    andExp = Expression.And(andExp, expressions[i]);
+                }
+            }
+            return andExp;
+        }
+
+        private static Expression GenerateOrExpression(List<Expression> expressions)
+        {
             Expression orExp = Expression.Empty();
             if (expressions.Count == 1)
             {
@@ -118,9 +151,9 @@ namespace EntitySearch
                     orExp = Expression.Or(orExp, expressions[i]);
                 }
             }
-
-            return Expression.Lambda<Func<TSource, bool>>(orExp.Reduce(), xExp);
+            return orExp;
         }
+
         private static LambdaExpression GenereteLambdaExpression<T>(ref Type type, string propertyName)
         {
             ParameterExpression arg = Expression.Parameter(type, "x");

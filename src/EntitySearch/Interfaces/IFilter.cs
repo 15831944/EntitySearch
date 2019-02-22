@@ -12,6 +12,9 @@ namespace EntitySearch.Interfaces
     public interface IFilter<TSource> where TSource : class
     {
         string Query { get; set; }
+        bool QueryStrict { get; set; }
+        bool QueryPhrase { get; set; }
+        string QueryProperty { get; set; }
         int PageSize { get; set; }
         int PageNumber { get; set; }
         string OrderBy { get; set; }

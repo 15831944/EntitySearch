@@ -25,6 +25,7 @@ namespace EntitySearch.StoreAPI
         public void ConfigureServices(IServiceCollection services)
         {
             var assembly = AppDomain.CurrentDomain.Load("EntitySearch.StoreAPI");
+
             services.AddMediatR(assembly);
 
             services.AddDbContext<StoreContext>(options =>

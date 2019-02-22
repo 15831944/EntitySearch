@@ -11,6 +11,9 @@ namespace EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductsByF
     public class GetProductsByFilterQuery : IRequest<GetProductsByFilterQueryResponse>, IFilter<Product>
     {
         public string Query { get; set; }
+        public bool QueryStrict { get; set; }
+        public bool QueryPhrase { get; set; }
+        public string QueryProperty { get; set; }
         public int PageSize { get; set; }
         public int PageNumber { get; set; }
         public string OrderBy { get; set; }
@@ -22,6 +25,8 @@ namespace EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductsByF
             PageSize = 10;
             OrderBy = "ProductID";
             Order = Order.ASCENDING;
+            QueryStrict = false;
+            QueryPhrase = false;
         }
     }
 }
