@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 
 namespace EntitySearch
 {
@@ -28,10 +26,14 @@ namespace EntitySearch
             where TSource : class
         {
             if (source == null)
+            {
                 throw new ArgumentNullException("source");
+            }
 
             if (filter == null)
+            {
                 throw new ArgumentNullException(nameof(filter));
+            }
 
             Type type = typeof(TSource);
             LambdaExpression lambda = GenereteLambdaExpression<TSource>(ref type, filter.OrderBy);
@@ -127,7 +129,7 @@ namespace EntitySearch
             Expression expr = arg;
             foreach (string item in listProperties)
             {
-                PropertyInfo np = type.GetProperty(item);
+                PropertyInfo np = type.GetProperties().SingleOrDefault(x => x.Name.ToLower() == item.ToLower());
                 expr = Expression.MakeMemberAccess(expr, np);
                 type = np.PropertyType;
             }

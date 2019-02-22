@@ -22,10 +22,8 @@ namespace EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductsByF
         public async Task<GetProductsByFilterQueryResponse> Handle(GetProductsByFilterQuery request, CancellationToken cancellationToken)
         {
             int resultCount = 0;
-            //var query = Context.Products.AsQueryable();
-            
-            var results = await Context.Products.Search(request).Count(ref resultCount).OrderBy(request).Scope(request).ToListAsync(cancellationToken);
-            
+
+            var results = await Context.Products.Search(request).Count(ref resultCount).OrderBy(request).Scope(request).AsNoTracking().ToListAsync(cancellationToken);            
 
             return new GetProductsByFilterQueryResponse
             {
