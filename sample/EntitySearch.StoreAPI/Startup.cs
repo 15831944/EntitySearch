@@ -56,7 +56,7 @@ namespace EntitySearch.StoreAPI
 
         private async Task ContextSeedAsync(StoreContext context)
         {
-            if (false)
+            if (context.Products.Count() < 100_000)
             {
                 if (context.Products.Any())
                 {

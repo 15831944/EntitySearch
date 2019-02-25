@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 
 namespace EntitySearch.Interfaces
@@ -11,6 +12,7 @@ namespace EntitySearch.Interfaces
     }
     public interface IFilter<TSource> where TSource : class
     {
+        Dictionary<PropertyInfo, object> SuppliedProperties { get; set; }
         string Query { get; set; }
         bool QueryStrict { get; set; }
         bool QueryPhrase { get; set; }
