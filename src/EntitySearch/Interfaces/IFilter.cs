@@ -12,11 +12,11 @@ namespace EntitySearch.Interfaces
     }
     public interface IFilter<TSource> where TSource : class
     {
-        Dictionary<PropertyInfo, object> SuppliedProperties { get; set; }
+        Dictionary<string, object> FilterProperties { get; set; }
         string Query { get; set; }
         bool QueryStrict { get; set; }
         bool QueryPhrase { get; set; }
-        string QueryProperty { get; set; }
+        List<string> QueryProperty { get; set; }
         int PageSize { get; set; }
         int PageNumber { get; set; }
         string OrderBy { get; set; }

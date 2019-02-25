@@ -10,7 +10,7 @@ namespace EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductsByF
 {
     public class GetProductsByFilterQuery : Filter<Product>, IRequest<GetProductsByFilterQueryResponse>
     {
-        public GetProductsByFilterQuery()
+        public GetProductsByFilterQuery() : base()
         {
             PageNumber = 0;
             PageSize = 10;

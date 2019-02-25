@@ -111,9 +111,9 @@ namespace EntitySearch
             return Expression.Lambda<Func<TSource, bool>>(orExp.Reduce(), xExp);
         }
 
-        private static IEnumerable<PropertyInfo> GetPropertiesFromType(Type type, string queryProperty)
+        private static IEnumerable<PropertyInfo> GetPropertiesFromType(Type type, List<string> queryProperty)
         {
-            return type.GetProperties().Where(x => string.IsNullOrWhiteSpace(queryProperty) || x.Name.ToLower() == queryProperty.ToLower()).ToList();
+            return type.GetProperties().Where(x => queryProperty != null || queryProperty.Any(y=>y.ToLower() == x.Name.ToLower())).ToList();
         }
 
         private static Expression GenerateAndExpressions(List<Expression> expressions)
