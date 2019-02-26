@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
@@ -13,7 +12,6 @@ namespace EntitySearch.Interfaces
     }
     public interface IFilter
     {
-        //QueryString QueryString { get; set; }
         Dictionary<string, object> FilterProperties { get; set; }
         string Query { get; set; }
         bool QueryStrict { get; set; }

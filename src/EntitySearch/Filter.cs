@@ -1,5 +1,4 @@
 ﻿using EntitySearch.Interfaces;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -14,7 +13,6 @@ namespace EntitySearch
     public class Filter<TEntity> : IFilter<TEntity>
         where TEntity : class
     {
-        //public QueryString QueryString { get; set; }
         public Dictionary<string, object> FilterProperties { get; set; }
         public string Query { get; set; }
         public bool QueryStrict { get; set; }
@@ -26,9 +24,11 @@ namespace EntitySearch
         public Order Order { get; set; }
         public Filter()
         {
-            //QueryString = new QueryString();
             FilterProperties = new Dictionary<string, object>();
             QueryProperties = new List<string>();
+            PageSize = 10;
+            PageNumber = 0;
+            Order = Order.ASCENDING;
         }
     }
 }

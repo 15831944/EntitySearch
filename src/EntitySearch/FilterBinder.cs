@@ -1,6 +1,7 @@
 ﻿using EntitySearch.Interfaces;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -42,19 +43,29 @@ namespace EntitySearch
                     {
                         foreach (var filterProperty in bindingContext.ModelType.BaseType.GenericTypeArguments[0].GetProperties())
                         {
-                            valueProviderResult = bindingContext.ValueProvider.GetValue(filterProperty.Name);
-                            if (valueProviderResult != ValueProviderResult.None)
+                            GetPropertyTypeBinders(filterProperty.PropertyType).ForEach(typeBinder =>
                             {
-                                if (valueProviderResult.Length == 1)
+                                var filterName = $"{filterProperty.Name}{typeBinder}";
+                                valueProviderResult = bindingContext.ValueProvider.GetValue(filterName);
+                                if (valueProviderResult != ValueProviderResult.None)
                                 {
-                                    bool changed = false;
-                                    object typedValue = TryChangeType(valueProviderResult.FirstValue, filterProperty.PropertyType, ref changed);
-                                    if (changed)
+                                    var listObjects = new List<object>();
+                                    valueProviderResult.Values.ToList().ForEach(value =>
                                     {
-                                        ((IFilter)bindingContext.Model).FilterProperties.Add(filterProperty.Name, typedValue);
+                                        bool changed = false;
+                                        object typedValue = TryChangeType(value, filterProperty.PropertyType, ref changed);
+                                        if (changed)
+                                        {
+                                            listObjects.Add(typedValue);
+                                        }
+                                    });
+
+                                    if (listObjects.Count > 0)
+                                    {
+                                        ((IFilter)bindingContext.Model).FilterProperties.Add(filterName, listObjects.Count > 1 ? listObjects : listObjects.FirstOrDefault());
                                     }
                                 }
-                            }
+                            });
                         }
                     }
                 }
@@ -67,6 +78,36 @@ namespace EntitySearch
 
             bindingContext.Result = ModelBindingResult.Success(bindingContext.Model);
             return Task.CompletedTask;
+        }
+
+        private List<string> GetPropertyTypeBinders(Type propertyType)
+        {
+            List<string> comparationTypes = new List<string>();
+
+            comparationTypes.Add("");
+            comparationTypes.Add("_Not");
+            if (propertyType == typeof(string) || propertyType == typeof(char))
+            {
+                comparationTypes.Add("_Contains");
+                comparationTypes.Add("_NotContains");
+            }
+
+            if (propertyType == typeof(int)
+                    || propertyType == typeof(long)
+                    || propertyType == typeof(float)
+                    || propertyType == typeof(float)
+                    || propertyType == typeof(double)
+                    || propertyType == typeof(decimal)
+                    || propertyType == typeof(DateTime)
+                    || propertyType == typeof(TimeSpan))
+            {
+                comparationTypes.Add("_GreaterThen");
+                comparationTypes.Add("_SmallerThen");
+                comparationTypes.Add("_GreaterEqual");
+                comparationTypes.Add("_SmallerEqual");
+            }
+
+            return comparationTypes.Distinct().ToList();
         }
 
         private object TryChangeType(string value, Type typeTo, ref bool changed)

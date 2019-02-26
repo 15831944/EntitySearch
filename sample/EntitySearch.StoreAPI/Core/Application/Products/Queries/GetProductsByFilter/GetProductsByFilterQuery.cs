@@ -12,12 +12,7 @@ namespace EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductsByF
     {
         public GetProductsByFilterQuery() : base()
         {
-            PageNumber = 0;
-            PageSize = 10;
             OrderBy = "ProductID";
-            Order = Order.ASCENDING;
-            QueryStrict = false;
-            QueryPhrase = false;
         }
     }
 }
