@@ -1,9 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
+﻿using EntitySearch.Interfaces;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Text;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace EntitySearch
@@ -19,25 +17,45 @@ namespace EntitySearch
 
             bindingContext.Model = Activator.CreateInstance(bindingContext.ModelType);
 
-            foreach(var property in bindingContext.ModelType.GetProperties())
+            foreach (var property in bindingContext.ModelType.GetProperties())
             {
                 var valueProviderResult = bindingContext.ValueProvider.GetValue(property.Name);
                 if (valueProviderResult != ValueProviderResult.None)
                 {
-                    //var value = Activator.CreateInstance(property.PropertyType);
                     if (valueProviderResult.Length > 1)
                     {
-                        bindingContext.ModelState.SetModelValue(property.Name, valueProviderResult);
-                        foreach(var value in valueProviderResult.Values)
+                        if (property.Name == "QueryProperties")
                         {
-
+                            valueProviderResult.Values.ToList().ForEach(value => ((IFilter)bindingContext.Model).QueryProperties.Add(value));
                         }
-                        property.SetValue(bindingContext.Model, Convert.ChangeType(valueProviderResult.FirstValue, property.PropertyType));
                     }
                     else
                     {
-                        bindingContext.ModelState.SetModelValue(property.Name, valueProviderResult);
                         property.SetValue(bindingContext.Model, Convert.ChangeType(valueProviderResult.FirstValue, property.PropertyType));
+                    }
+
+                    bindingContext.ModelState.SetModelValue(property.Name, valueProviderResult);
+                }
+                else
+                {
+                    if (property.Name == "FilterProperties")
+                    {
+                        foreach (var filterProperty in bindingContext.ModelType.BaseType.GenericTypeArguments[0].GetProperties())
+                        {
+                            valueProviderResult = bindingContext.ValueProvider.GetValue(filterProperty.Name);
+                            if (valueProviderResult != ValueProviderResult.None)
+                            {
+                                if (valueProviderResult.Length == 1)
+                                {
+                                    bool changed = false;
+                                    object typedValue = TryChangeType(valueProviderResult.FirstValue, filterProperty.PropertyType, ref changed);
+                                    if (changed)
+                                    {
+                                        ((IFilter)bindingContext.Model).FilterProperties.Add(filterProperty.Name, typedValue);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -49,6 +67,21 @@ namespace EntitySearch
 
             bindingContext.Result = ModelBindingResult.Success(bindingContext.Model);
             return Task.CompletedTask;
+        }
+
+        private object TryChangeType(string value, Type typeTo, ref bool changed)
+        {
+            try
+            {
+                object convertedObject = Convert.ChangeType(value, typeTo);
+                changed = true;
+                return convertedObject;
+            }
+            catch (Exception)
+            {
+                changed = false;
+                return Activator.CreateInstance(typeTo);
+            }
         }
     }
 }

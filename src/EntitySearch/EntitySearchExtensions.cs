@@ -86,7 +86,7 @@ namespace EntitySearch
 
             var xExp = Expression.Parameter(typeof(TSource), "x");
 
-            foreach (var propertyInfo in GetPropertiesFromType(typeof(TSource), filter.QueryProperty))
+            foreach (var propertyInfo in GetPropertiesFromType(typeof(TSource), filter.QueryProperties))
             {
                 Expression memberExp = Expression.MakeMemberAccess(xExp, propertyInfo);
 

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
@@ -10,16 +11,22 @@ namespace EntitySearch.Interfaces
         ASCENDING,
         DESCENEDING
     }
-    public interface IFilter<TSource> where TSource : class
+    public interface IFilter
     {
+        //QueryString QueryString { get; set; }
         Dictionary<string, object> FilterProperties { get; set; }
         string Query { get; set; }
         bool QueryStrict { get; set; }
         bool QueryPhrase { get; set; }
-        List<string> QueryProperty { get; set; }
+        List<string> QueryProperties { get; set; }
         int PageSize { get; set; }
         int PageNumber { get; set; }
         string OrderBy { get; set; }
         Order Order { get; set; }
+
+    }
+    public interface IFilter<TSource> : IFilter
+        where TSource : class
+    {
     }
 }
