@@ -56,7 +56,7 @@ namespace EntitySearch.StoreAPI
 
         private async Task ContextSeedAsync(StoreContext context)
         {
-            if (context.Products.Count() < 100_000)
+            while (context.Products.Count() < 100_000)
             {
                 if (context.Products.Any())
                 {
@@ -173,7 +173,7 @@ namespace EntitySearch.StoreAPI
                     Description = string.Format("{0} {1} {2} {3} {4}", phrases[random.Next(numberOfPhrases)].TrimStart().TrimEnd(), phrases[random.Next(numberOfPhrases)].TrimStart().TrimEnd(), phrases[random.Next(numberOfPhrases)].TrimStart().TrimEnd(), phrases[random.Next(numberOfPhrases)].TrimStart().TrimEnd(), phrases[random.Next(numberOfPhrases)].TrimStart().TrimEnd()),
                     Value = Convert.ToDecimal(random.Next(0, 1000).ToString() + "," + random.Next(99).ToString()),
                     Ammount = random.Next(1000),
-                    IsPublic = Convert.ToBoolean(random.Next(1)),
+                    IsPublic = Convert.ToBoolean(random.Next(2)),
                     RegistrationDate = DateTime.UtcNow
                 });
             }

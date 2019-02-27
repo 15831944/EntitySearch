@@ -22,7 +22,6 @@ namespace EntitySearch
 
             return source.Where(criteriaExp);
         }
-
         public static IQueryable<TSource> Search<TSource>(this IQueryable<TSource> source, IFilter<TSource> filter)
             where TSource : class
         {
@@ -50,7 +49,7 @@ namespace EntitySearch
             }
 
             Type type = typeof(TSource);
-            LambdaExpression lambda = GenereteLambdaExpression<TSource>(ref type, filter.OrderBy);
+            Expression lambda = GenereteLambdaExpression<TSource>(ref type, filter.OrderBy);
             MethodInfo orderMethod;
 
             if (filter.Order == Order.ASCENDING)
@@ -79,21 +78,6 @@ namespace EntitySearch
             count = source.Count();
             return source;
         }
-        private static List<string> BreakQuery(string query, bool queryPhrase)
-        {
-            return queryPhrase ? new List<string> { query } : query.ToLower().Split(" ").ToList();
-        }
-        private static MethodInfo GetMethodFromType(Type type, string methodName, int parameters, int genericArguments, List<Type> parameterTypes = null)
-        {
-            return type.GetMethods()
-                .SingleOrDefault(method =>
-                    method.Name == methodName
-                    && method.GetParameters().Count() == parameters
-                    && method.GetGenericArguments().Count() == genericArguments
-                    && (parameterTypes == null || parameterTypes.All(x => method.GetParameters().Select(parameter => parameter.ParameterType).Contains(x)))
-                );
-        }
-
         private static Expression<Func<TSource, bool>> GenerateFilterCriteriaExpression<TSource>(IFilter<TSource> filter) where TSource : class
         {
             List<Expression> expressions = new List<Expression>();
@@ -121,8 +105,7 @@ namespace EntitySearch
 
             return Expression.Lambda<Func<TSource, bool>>(orExp.Reduce(), xExp);
         }
-
-        private static Expression<Func<TSource, bool>> GenerateSearchCriteriaExpression<TSource>(List<string> tokens, IFilter<TSource> filter)
+        private static Expression<Func<TSource, bool>> GenerateSearchCriteriaExpression<TSource>(IList<string> tokens, IFilter<TSource> filter)
             where TSource : class
         {
             List<Expression> orExpressions = new List<Expression>();
@@ -141,10 +124,8 @@ namespace EntitySearch
                 memberExp = Expression.Call(memberExp, GetMethodFromType(memberExp.Type, "ToLower", 0, 0));
                 List<Expression> andExpressions = new List<Expression>();
                 foreach (var token in tokens)
-                {
-                    var tokenExp = Expression.Constant(token, typeof(string));
-                    var containsExp = Expression.Call(memberExp, GetMethodFromType(memberExp.Type, "Contains", 1, 0, new List<Type> { typeof(string) }), tokenExp);
-                    andExpressions.Add(containsExp);
+                {                    
+                    andExpressions.Add(GenerateStringContainsExpression(memberExp, Expression.Constant(token, typeof(string))));
                 }
                 orExpressions.Add(filter.QueryStrict ? GenerateAndExpressions(andExpressions) : GenerateOrExpression(andExpressions));
             }
@@ -153,12 +134,6 @@ namespace EntitySearch
             
             return Expression.Lambda<Func<TSource, bool>>(orExp.Reduce(), xExp);
         }
-
-        private static IEnumerable<PropertyInfo> GetPropertiesFromType(Type type, List<string> queryProperty = null)
-        {
-            return type.GetProperties().Where(x => queryProperty == null || queryProperty.Any(y=>y.ToLower() == x.Name.ToLower())).ToList();
-        }
-
         private static Expression GenerateFilterComparationExpression(Expression memberExp, KeyValuePair<string, object> filterProperty, PropertyInfo property, string comparation = null)
         {
             if (string.IsNullOrWhiteSpace(comparation))
@@ -171,13 +146,11 @@ namespace EntitySearch
             }
             if (comparation == "Contains")
             {
-                //TODO
-                return GenerateFilterStrictExpression(memberExp, filterProperty, property);
+                return GenerateFilterContainsExpression(memberExp, filterProperty, property);
             }
             if (comparation == "NotContains")
             {
-                //TODO
-                return GenerateFilterStrictExpression(memberExp, filterProperty, property);
+                return Expression.Not(GenerateFilterContainsExpression(memberExp, filterProperty, property));
             }
             if (comparation == "GreaterThan")
             {
@@ -201,7 +174,26 @@ namespace EntitySearch
             }
             return Expression.Empty();
         }
-
+        private static Expression GenerateStringContainsExpression(Expression memberExp, ConstantExpression tokenExp)
+        {
+            return Expression.Call(memberExp, GetMethodFromType(memberExp.Type, "Contains", 1, 0, new List<Type> { typeof(string) }), tokenExp);
+        }
+        private static Expression GenerateFilterContainsExpression(Expression memberExp, KeyValuePair<string, object> filterProperty, PropertyInfo property)
+        {
+            if (filterProperty.Value.GetType().IsGenericType && filterProperty.Value.GetType().GetGenericTypeDefinition() == typeof(List<>))
+            {
+                List<Expression> orExpressions = new List<Expression>();
+                foreach (var value in ((List<object>)filterProperty.Value))
+                {
+                    orExpressions.Add(GenerateStringContainsExpression(memberExp, Expression.Constant(value, property.PropertyType)));
+                }
+                return GenerateOrExpression(orExpressions);
+            }
+            else
+            {
+                return GenerateStringContainsExpression(memberExp, Expression.Constant(filterProperty.Value, property.PropertyType));
+            }
+        }
         private static Expression GenerateFilterStrictExpression(Expression memberExp,KeyValuePair<string, object> filterProperty, PropertyInfo property)
         {
             if (filterProperty.Value.GetType().IsGenericType && filterProperty.Value.GetType().GetGenericTypeDefinition() == typeof(List<>))
@@ -218,7 +210,6 @@ namespace EntitySearch
                 return Expression.Equal(memberExp, Expression.Constant(filterProperty.Value, property.PropertyType));
             }
         }
-
         private static Expression GenerateAndExpressions(List<Expression> expressions)
         {
             Expression andExp = Expression.Empty();
@@ -237,7 +228,6 @@ namespace EntitySearch
             }
             return andExp;
         }
-
         private static Expression GenerateOrExpression(List<Expression> expressions)
         {
             Expression orExp = Expression.Empty();
@@ -256,8 +246,7 @@ namespace EntitySearch
             }
             return orExp;
         }
-
-        private static LambdaExpression GenereteLambdaExpression<T>(ref Type type, string propertyName)
+        private static Expression GenereteLambdaExpression<T>(ref Type type, string propertyName)
         {
             ParameterExpression arg = Expression.Parameter(type, "x");
             List<string> listProperties = propertyName.Split('.').ToList();
@@ -272,6 +261,24 @@ namespace EntitySearch
 
             Type delegateType = typeof(Func<,>).MakeGenericType(typeof(T), type);
             return Expression.Lambda(delegateType, expr, arg);
+        }
+        private static IList<PropertyInfo> GetPropertiesFromType(Type type, List<string> queryProperty = null)
+        {
+            return type.GetProperties().Where(x => queryProperty == null || queryProperty.Any(y=>y.ToLower() == x.Name.ToLower())).ToList();
+        }
+        private static MethodInfo GetMethodFromType(Type type, string methodName, int parameters, int genericArguments, List<Type> parameterTypes = null)
+        {
+            return type.GetMethods()
+                .SingleOrDefault(method =>
+                    method.Name == methodName
+                    && method.GetParameters().Count() == parameters
+                    && method.GetGenericArguments().Count() == genericArguments
+                    && (parameterTypes == null || parameterTypes.All(x => method.GetParameters().Select(parameter => parameter.ParameterType).Contains(x)))
+                );
+        }
+        private static IList<string> BreakQuery(string query, bool queryPhrase)
+        {
+            return queryPhrase ? new List<string> { query } : query.ToLower().Split(" ").ToList();
         }
     }
 }
