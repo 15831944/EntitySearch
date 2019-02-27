@@ -154,29 +154,40 @@ namespace EntitySearch
             }
             if (comparation == "GreaterThan")
             {
-                //TODO
-                return GenerateFilterStrictExpression(memberExp, filterProperty, property);
+                return GenerateFilterGreaterThanExpression(memberExp, filterProperty, property);
             }
             if (comparation == "GreaterEqual")
             {
                 //TODO
-                return GenerateFilterStrictExpression(memberExp, filterProperty, property);
+                return GenerateFilterGreaterEqualExpression(memberExp, filterProperty, property);
             }
             if (comparation == "SmallerThan")
             {
                 //TODO
-                return GenerateFilterStrictExpression(memberExp, filterProperty, property);
+                return GenerateFilterSmallerThanExpression(memberExp, filterProperty, property);
             }
             if (comparation == "SmallerEqual")
             {
                 //TODO
-                return GenerateFilterStrictExpression(memberExp, filterProperty, property);
+                return GenerateFilterSmallerEqualExpression(memberExp, filterProperty, property);
             }
             return Expression.Empty();
         }
-        private static Expression GenerateStringContainsExpression(Expression memberExp, ConstantExpression tokenExp)
+        private static Expression GenerateFilterStrictExpression(Expression memberExp,KeyValuePair<string, object> filterProperty, PropertyInfo property)
         {
-            return Expression.Call(memberExp, GetMethodFromType(memberExp.Type, "Contains", 1, 0, new List<Type> { typeof(string) }), tokenExp);
+            if (filterProperty.Value.GetType().IsGenericType && filterProperty.Value.GetType().GetGenericTypeDefinition() == typeof(List<>))
+            {
+                List<Expression> orExpressions = new List<Expression>();
+                foreach (var value in ((List<object>)filterProperty.Value))
+                {
+                    orExpressions.Add(Expression.Equal(memberExp, Expression.Constant(value, property.PropertyType)));
+                }
+                return GenerateOrExpression(orExpressions);
+            }
+            else
+            {
+                return Expression.Equal(memberExp, Expression.Constant(filterProperty.Value, property.PropertyType));
+            }
         }
         private static Expression GenerateFilterContainsExpression(Expression memberExp, KeyValuePair<string, object> filterProperty, PropertyInfo property)
         {
@@ -194,21 +205,25 @@ namespace EntitySearch
                 return GenerateStringContainsExpression(memberExp, Expression.Constant(filterProperty.Value, property.PropertyType));
             }
         }
-        private static Expression GenerateFilterStrictExpression(Expression memberExp,KeyValuePair<string, object> filterProperty, PropertyInfo property)
+        private static Expression GenerateFilterGreaterThanExpression(Expression memberExp, KeyValuePair<string, object> filterProperty, PropertyInfo property)
         {
-            if (filterProperty.Value.GetType().IsGenericType && filterProperty.Value.GetType().GetGenericTypeDefinition() == typeof(List<>))
-            {
-                List<Expression> orExpressions = new List<Expression>();
-                foreach (var value in ((List<object>)filterProperty.Value))
-                {
-                    orExpressions.Add(Expression.Equal(memberExp, Expression.Constant(value, property.PropertyType)));
-                }
-                return GenerateOrExpression(orExpressions);
-            }
-            else
-            {
-                return Expression.Equal(memberExp, Expression.Constant(filterProperty.Value, property.PropertyType));
-            }
+            throw new NotImplementedException();
+        }
+        private static Expression GenerateFilterGreaterEqualExpression(Expression memberExp, KeyValuePair<string, object> filterProperty, PropertyInfo property)
+        {
+            throw new NotImplementedException();
+        }
+        private static Expression GenerateFilterSmallerThanExpression(Expression memberExp, KeyValuePair<string, object> filterProperty, PropertyInfo property)
+        {
+            throw new NotImplementedException();
+        }
+        private static Expression GenerateFilterSmallerEqualExpression(Expression memberExp, KeyValuePair<string, object> filterProperty, PropertyInfo property)
+        {
+            throw new NotImplementedException();
+        }
+        private static Expression GenerateStringContainsExpression(Expression memberExp, ConstantExpression tokenExp)
+        {
+            return Expression.Call(memberExp, GetMethodFromType(memberExp.Type, "Contains", 1, 0, new List<Type> { typeof(string) }), tokenExp);
         }
         private static Expression GenerateAndExpressions(List<Expression> expressions)
         {
