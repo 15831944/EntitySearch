@@ -109,23 +109,11 @@ namespace EntitySearch
 
                 if (propertyParts.Count() == 1)
                 {
-                    if(filterProperty.Value.GetType().IsGenericType && filterProperty.Value.GetType().GetGenericTypeDefinition() == typeof(List<>))
-                    {
-                        List<Expression> orExpressions = new List<Expression>();
-                        foreach(var value in ((List<object>)filterProperty.Value))
-                        {
-                            orExpressions.Add(Expression.Equal(memberExp, Expression.Constant(value, property.PropertyType)));
-                        }
-                        expressions.Add(GenerateOrExpression(orExpressions));
-                    }
-                    else
-                    {
-                        expressions.Add(Expression.Equal(memberExp, Expression.Constant(filterProperty.Value, property.PropertyType)));
-                    }
+                    expressions.Add(GenerateFilterComparationExpression(memberExp, filterProperty, property));
                 }
                 else
                 {
-
+                    expressions.Add(GenerateFilterComparationExpression(memberExp, filterProperty, property, propertyParts[1]));
                 }
             }
 
@@ -169,6 +157,66 @@ namespace EntitySearch
         private static IEnumerable<PropertyInfo> GetPropertiesFromType(Type type, List<string> queryProperty = null)
         {
             return type.GetProperties().Where(x => queryProperty == null || queryProperty.Any(y=>y.ToLower() == x.Name.ToLower())).ToList();
+        }
+
+        private static Expression GenerateFilterComparationExpression(Expression memberExp, KeyValuePair<string, object> filterProperty, PropertyInfo property, string comparation = null)
+        {
+            if (string.IsNullOrWhiteSpace(comparation))
+            {
+                return GenerateFilterStrictExpression(memberExp, filterProperty, property);
+            }
+            if (comparation == "Not")
+            {
+                return Expression.Not(GenerateFilterStrictExpression(memberExp, filterProperty, property));
+            }
+            if (comparation == "Contains")
+            {
+                //TODO
+                return GenerateFilterStrictExpression(memberExp, filterProperty, property);
+            }
+            if (comparation == "NotContains")
+            {
+                //TODO
+                return GenerateFilterStrictExpression(memberExp, filterProperty, property);
+            }
+            if (comparation == "GreaterThan")
+            {
+                //TODO
+                return GenerateFilterStrictExpression(memberExp, filterProperty, property);
+            }
+            if (comparation == "GreaterEqual")
+            {
+                //TODO
+                return GenerateFilterStrictExpression(memberExp, filterProperty, property);
+            }
+            if (comparation == "SmallerThan")
+            {
+                //TODO
+                return GenerateFilterStrictExpression(memberExp, filterProperty, property);
+            }
+            if (comparation == "SmallerEqual")
+            {
+                //TODO
+                return GenerateFilterStrictExpression(memberExp, filterProperty, property);
+            }
+            return Expression.Empty();
+        }
+
+        private static Expression GenerateFilterStrictExpression(Expression memberExp,KeyValuePair<string, object> filterProperty, PropertyInfo property)
+        {
+            if (filterProperty.Value.GetType().IsGenericType && filterProperty.Value.GetType().GetGenericTypeDefinition() == typeof(List<>))
+            {
+                List<Expression> orExpressions = new List<Expression>();
+                foreach (var value in ((List<object>)filterProperty.Value))
+                {
+                    orExpressions.Add(Expression.Equal(memberExp, Expression.Constant(value, property.PropertyType)));
+                }
+                return GenerateOrExpression(orExpressions);
+            }
+            else
+            {
+                return Expression.Equal(memberExp, Expression.Constant(filterProperty.Value, property.PropertyType));
+            }
         }
 
         private static Expression GenerateAndExpressions(List<Expression> expressions)

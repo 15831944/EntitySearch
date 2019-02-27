@@ -101,8 +101,8 @@ namespace EntitySearch
                     || propertyType == typeof(DateTime)
                     || propertyType == typeof(TimeSpan))
             {
-                comparationTypes.Add("_GreaterThen");
-                comparationTypes.Add("_SmallerThen");
+                comparationTypes.Add("_GreaterThan");
+                comparationTypes.Add("_SmallerThan");
                 comparationTypes.Add("_GreaterEqual");
                 comparationTypes.Add("_SmallerEqual");
             }
