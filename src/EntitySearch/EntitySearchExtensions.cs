@@ -1,6 +1,7 @@
 ﻿using EntitySearch.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -9,6 +10,19 @@ namespace EntitySearch
 {
     public static class EntitySearchExtensions
     {
+        public static IQueryable<TSource> Filter<TSource>(this IQueryable<TSource> source, IFilter<TSource> filter)
+            where TSource : class
+        {
+            if (filter.FilterProperties == null || filter.FilterProperties.Count == 0)
+            {
+                return source;
+            }
+
+            var criteriaExp = GenerateFilterCriteriaExpression(filter);
+
+            return source.Where(criteriaExp);
+        }
+
         public static IQueryable<TSource> Search<TSource>(this IQueryable<TSource> source, IFilter<TSource> filter)
             where TSource : class
         {
@@ -18,7 +32,7 @@ namespace EntitySearch
             }
 
             var queryTokens = BreakQuery(filter.Query, filter.QueryPhrase);
-            var criteriaExp = GenerateSearchCriteriaExpression<TSource>(queryTokens, filter);
+            var criteriaExp = GenerateSearchCriteriaExpression(queryTokens, filter);
 
             return source.Where(criteriaExp);
         }
@@ -79,6 +93,47 @@ namespace EntitySearch
                     && (parameterTypes == null || parameterTypes.All(x => method.GetParameters().Select(parameter => parameter.ParameterType).Contains(x)))
                 );
         }
+
+        private static Expression<Func<TSource, bool>> GenerateFilterCriteriaExpression<TSource>(IFilter<TSource> filter) where TSource : class
+        {
+            List<Expression> expressions = new List<Expression>();
+
+            var xExp = Expression.Parameter(typeof(TSource), "x");
+
+            foreach(var filterProperty in filter.FilterProperties)
+            {
+                var propertyParts = filterProperty.Key.Split("_");
+                var property = typeof(TSource).GetProperty(propertyParts[0]);
+
+                Expression memberExp = Expression.MakeMemberAccess(xExp, property);
+
+                if (propertyParts.Count() == 1)
+                {
+                    if(filterProperty.Value.GetType().IsGenericType && filterProperty.Value.GetType().GetGenericTypeDefinition() == typeof(List<>))
+                    {
+                        List<Expression> orExpressions = new List<Expression>();
+                        foreach(var value in ((List<object>)filterProperty.Value))
+                        {
+                            orExpressions.Add(Expression.Equal(memberExp, Expression.Constant(value, property.PropertyType)));
+                        }
+                        expressions.Add(GenerateOrExpression(orExpressions));
+                    }
+                    else
+                    {
+                        expressions.Add(Expression.Equal(memberExp, Expression.Constant(filterProperty.Value, property.PropertyType)));
+                    }
+                }
+                else
+                {
+
+                }
+            }
+
+            Expression orExp = GenerateAndExpressions(expressions);
+
+            return Expression.Lambda<Func<TSource, bool>>(orExp.Reduce(), xExp);
+        }
+
         private static Expression<Func<TSource, bool>> GenerateSearchCriteriaExpression<TSource>(List<string> tokens, IFilter<TSource> filter)
             where TSource : class
         {
@@ -111,9 +166,9 @@ namespace EntitySearch
             return Expression.Lambda<Func<TSource, bool>>(orExp.Reduce(), xExp);
         }
 
-        private static IEnumerable<PropertyInfo> GetPropertiesFromType(Type type, List<string> queryProperty)
+        private static IEnumerable<PropertyInfo> GetPropertiesFromType(Type type, List<string> queryProperty = null)
         {
-            return type.GetProperties().Where(x => queryProperty != null || queryProperty.Any(y=>y.ToLower() == x.Name.ToLower())).ToList();
+            return type.GetProperties().Where(x => queryProperty == null || queryProperty.Any(y=>y.ToLower() == x.Name.ToLower())).ToList();
         }
 
         private static Expression GenerateAndExpressions(List<Expression> expressions)

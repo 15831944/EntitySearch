@@ -23,7 +23,14 @@ namespace EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductsByF
         {
             int resultCount = 0;
 
-            var results = await Context.Products.Search(request).Count(ref resultCount).OrderBy(request).Scope(request).AsNoTracking().ToListAsync(cancellationToken);            
+            var results = await Context.Products
+                .Filter(request)
+                .Search(request)
+                .Count(ref resultCount)
+                .OrderBy(request)
+                .Scope(request)
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);            
 
             return new GetProductsByFilterQueryResponse
             {
