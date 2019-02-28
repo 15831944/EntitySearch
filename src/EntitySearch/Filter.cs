@@ -1,4 +1,5 @@
-﻿using EntitySearch.Interfaces;
+﻿using EntitySearch.Binders;
+using EntitySearch.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace EntitySearch
+namespace EntitySearch.Binders
 {
     public class FilterBinder : IModelBinder
     {
@@ -94,6 +94,10 @@ namespace EntitySearch
             {
                 comparationTypes.Add("_Contains");
                 comparationTypes.Add("_NotContains");
+                comparationTypes.Add("_StartsWith");
+                comparationTypes.Add("_NotStartsWith");
+                comparationTypes.Add("_EndsWith");
+                comparationTypes.Add("_NotEndsWith");
             }
 
             if (propertyType == typeof(int)

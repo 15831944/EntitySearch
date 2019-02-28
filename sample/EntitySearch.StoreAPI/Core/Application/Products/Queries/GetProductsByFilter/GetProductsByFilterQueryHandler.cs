@@ -1,4 +1,5 @@
-﻿using EntitySearch.StoreAPI.Core.Domain.Entities;
+﻿using EntitySearch.Extensions;
+using EntitySearch.StoreAPI.Core.Domain.Entities;
 using EntitySearch.StoreAPI.Core.Infrastructures.Data.Contexts;
 using MediatR;
 using Microsoft.EntityFrameworkCore;

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace EntitySearch
+namespace EntitySearch.Extensions
 {
     public static class EntitySearchExtensions
     {
@@ -151,6 +151,22 @@ namespace EntitySearch
             {
                 return Expression.Not(GenerateFilterContainsExpression(memberExp, filterProperty, property));
             }
+            if (comparation == "StartsWith")
+            {
+                return GenerateFilterStartsWithExpression(memberExp, filterProperty, property);
+            }
+            if (comparation == "NotStartsWith")
+            {
+                return Expression.Not(GenerateFilterStartsWithExpression(memberExp, filterProperty, property));
+            }
+            if (comparation == "EndsWith")
+            {
+                return GenerateFilterEndsWithExpression(memberExp, filterProperty, property);
+            }
+            if (comparation == "NotEndsWith")
+            {
+                return Expression.Not(GenerateFilterEndsWithExpression(memberExp, filterProperty, property));
+            }
             if (comparation == "GreaterThan")
             {
                 return GenerateFilterGreaterThanExpression(memberExp, filterProperty, property);
@@ -199,6 +215,38 @@ namespace EntitySearch
             else
             {
                 return GenerateStringContainsExpression(memberExp, Expression.Constant(filterProperty.Value, property.PropertyType));
+            }
+        }
+        private static Expression GenerateFilterStartsWithExpression(Expression memberExp, KeyValuePair<string, object> filterProperty, PropertyInfo property)
+        {
+            if (filterProperty.Value.GetType().IsGenericType && filterProperty.Value.GetType().GetGenericTypeDefinition() == typeof(List<>))
+            {
+                List<Expression> orExpressions = new List<Expression>();
+                foreach (var value in ((List<object>)filterProperty.Value))
+                {
+                    orExpressions.Add(GenerateStringStartsWithExpression(memberExp, Expression.Constant(value, property.PropertyType)));
+                }
+                return GenerateOrExpression(orExpressions);
+            }
+            else
+            {
+                return GenerateStringStartsWithExpression(memberExp, Expression.Constant(filterProperty.Value, property.PropertyType));
+            }
+        }
+        private static Expression GenerateFilterEndsWithExpression(Expression memberExp, KeyValuePair<string, object> filterProperty, PropertyInfo property)
+        {
+            if (filterProperty.Value.GetType().IsGenericType && filterProperty.Value.GetType().GetGenericTypeDefinition() == typeof(List<>))
+            {
+                List<Expression> orExpressions = new List<Expression>();
+                foreach (var value in ((List<object>)filterProperty.Value))
+                {
+                    orExpressions.Add(GenerateStringEndsWithExpression(memberExp, Expression.Constant(value, property.PropertyType)));
+                }
+                return GenerateOrExpression(orExpressions);
+            }
+            else
+            {
+                return GenerateStringEndsWithExpression(memberExp, Expression.Constant(filterProperty.Value, property.PropertyType));
             }
         }
         private static Expression GenerateFilterGreaterThanExpression(Expression memberExp, KeyValuePair<string, object> filterProperty, PropertyInfo property)
@@ -268,6 +316,14 @@ namespace EntitySearch
         private static Expression GenerateStringContainsExpression(Expression memberExp, ConstantExpression tokenExp)
         {
             return Expression.Call(memberExp, GetMethodFromType(memberExp.Type, "Contains", 1, 0, new List<Type> { typeof(string) }), tokenExp);
+        }
+        private static Expression GenerateStringStartsWithExpression(Expression memberExp, ConstantExpression tokenExp)
+        {
+            return Expression.Call(memberExp, GetMethodFromType(memberExp.Type, "StartsWith", 1, 0, new List<Type> { typeof(string) }), tokenExp);
+        }
+        private static Expression GenerateStringEndsWithExpression(Expression memberExp, ConstantExpression tokenExp)
+        {
+            return Expression.Call(memberExp, GetMethodFromType(memberExp.Type, "EndsWith", 1, 0, new List<Type> { typeof(string) }), tokenExp);
         }
         private static Expression GenerateAndExpressions(List<Expression> expressions)
         {
