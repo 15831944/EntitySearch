@@ -1,7 +1,6 @@
 ﻿using EntitySearch.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -84,7 +83,7 @@ namespace EntitySearch
 
             var xExp = Expression.Parameter(typeof(TSource), "x");
 
-            foreach(var filterProperty in filter.FilterProperties)
+            foreach (var filterProperty in filter.FilterProperties)
             {
                 var propertyParts = filterProperty.Key.Split("_");
                 var property = typeof(TSource).GetProperty(propertyParts[0]);
@@ -112,7 +111,7 @@ namespace EntitySearch
 
             var xExp = Expression.Parameter(typeof(TSource), "x");
 
-            foreach (var propertyInfo in GetPropertiesFromType(typeof(TSource), filter.QueryProperties))
+            foreach (var propertyInfo in GetPropertiesFromType(filter.GetSearchableProperties(typeof(TSource).GetProperties()), filter.QueryProperties))
             {
                 Expression memberExp = Expression.MakeMemberAccess(xExp, propertyInfo);
 
@@ -124,14 +123,14 @@ namespace EntitySearch
                 memberExp = Expression.Call(memberExp, GetMethodFromType(memberExp.Type, "ToLower", 0, 0));
                 List<Expression> andExpressions = new List<Expression>();
                 foreach (var token in tokens)
-                {                    
+                {
                     andExpressions.Add(GenerateStringContainsExpression(memberExp, Expression.Constant(token, typeof(string))));
                 }
                 orExpressions.Add(filter.QueryStrict ? GenerateAndExpressions(andExpressions) : GenerateOrExpression(andExpressions));
             }
 
             Expression orExp = GenerateOrExpression(orExpressions);
-            
+
             return Expression.Lambda<Func<TSource, bool>>(orExp.Reduce(), xExp);
         }
         private static Expression GenerateFilterComparationExpression(Expression memberExp, KeyValuePair<string, object> filterProperty, PropertyInfo property, string comparation = null)
@@ -156,24 +155,21 @@ namespace EntitySearch
             {
                 return GenerateFilterGreaterThanExpression(memberExp, filterProperty, property);
             }
-            if (comparation == "GreaterEqual")
+            if (comparation == "GreaterThanOrEqual")
             {
-                //TODO
                 return GenerateFilterGreaterEqualExpression(memberExp, filterProperty, property);
             }
-            if (comparation == "SmallerThan")
+            if (comparation == "LessThan")
             {
-                //TODO
                 return GenerateFilterSmallerThanExpression(memberExp, filterProperty, property);
             }
-            if (comparation == "SmallerEqual")
+            if (comparation == "LessThanOrEqual")
             {
-                //TODO
                 return GenerateFilterSmallerEqualExpression(memberExp, filterProperty, property);
             }
             return Expression.Empty();
         }
-        private static Expression GenerateFilterStrictExpression(Expression memberExp,KeyValuePair<string, object> filterProperty, PropertyInfo property)
+        private static Expression GenerateFilterStrictExpression(Expression memberExp, KeyValuePair<string, object> filterProperty, PropertyInfo property)
         {
             if (filterProperty.Value.GetType().IsGenericType && filterProperty.Value.GetType().GetGenericTypeDefinition() == typeof(List<>))
             {
@@ -207,19 +203,67 @@ namespace EntitySearch
         }
         private static Expression GenerateFilterGreaterThanExpression(Expression memberExp, KeyValuePair<string, object> filterProperty, PropertyInfo property)
         {
-            throw new NotImplementedException();
+            if (filterProperty.Value.GetType().IsGenericType && filterProperty.Value.GetType().GetGenericTypeDefinition() == typeof(List<>))
+            {
+                List<Expression> orExpressions = new List<Expression>();
+                foreach (var value in ((List<object>)filterProperty.Value))
+                {
+                    orExpressions.Add(Expression.GreaterThan(memberExp, Expression.Constant(value, property.PropertyType)));
+                }
+                return GenerateOrExpression(orExpressions);
+            }
+            else
+            {
+                return Expression.GreaterThan(memberExp, Expression.Constant(filterProperty.Value, property.PropertyType));
+            }
         }
         private static Expression GenerateFilterGreaterEqualExpression(Expression memberExp, KeyValuePair<string, object> filterProperty, PropertyInfo property)
         {
-            throw new NotImplementedException();
+            if (filterProperty.Value.GetType().IsGenericType && filterProperty.Value.GetType().GetGenericTypeDefinition() == typeof(List<>))
+            {
+                List<Expression> orExpressions = new List<Expression>();
+                foreach (var value in ((List<object>)filterProperty.Value))
+                {
+                    orExpressions.Add(Expression.GreaterThanOrEqual(memberExp, Expression.Constant(value, property.PropertyType)));
+                }
+                return GenerateOrExpression(orExpressions);
+            }
+            else
+            {
+                return Expression.GreaterThanOrEqual(memberExp, Expression.Constant(filterProperty.Value, property.PropertyType));
+            }
         }
         private static Expression GenerateFilterSmallerThanExpression(Expression memberExp, KeyValuePair<string, object> filterProperty, PropertyInfo property)
         {
-            throw new NotImplementedException();
+            if (filterProperty.Value.GetType().IsGenericType && filterProperty.Value.GetType().GetGenericTypeDefinition() == typeof(List<>))
+            {
+                List<Expression> orExpressions = new List<Expression>();
+                foreach (var value in ((List<object>)filterProperty.Value))
+                {
+                    orExpressions.Add(Expression.LessThan(memberExp, Expression.Constant(value, property.PropertyType)));
+                }
+                return GenerateOrExpression(orExpressions);
+            }
+            else
+            {
+                return Expression.LessThan(memberExp, Expression.Constant(filterProperty.Value, property.PropertyType));
+            }
         }
         private static Expression GenerateFilterSmallerEqualExpression(Expression memberExp, KeyValuePair<string, object> filterProperty, PropertyInfo property)
         {
-            throw new NotImplementedException();
+            if (filterProperty.Value.GetType().IsGenericType && filterProperty.Value.GetType().GetGenericTypeDefinition() == typeof(List<>))
+            {
+                List<Expression> orExpressions = new List<Expression>();
+                foreach (var value in ((List<object>)filterProperty.Value))
+                {
+                    orExpressions.Add(Expression.LessThanOrEqual(memberExp, Expression.Constant(value, property.PropertyType)));
+                }
+                return GenerateOrExpression(orExpressions);
+            }
+            else
+            {
+                return Expression.LessThanOrEqual(memberExp, Expression.Constant(filterProperty.Value, property.PropertyType));
+            }
         }
         private static Expression GenerateStringContainsExpression(Expression memberExp, ConstantExpression tokenExp)
         {
@@ -277,9 +321,9 @@ namespace EntitySearch
             Type delegateType = typeof(Func<,>).MakeGenericType(typeof(T), type);
             return Expression.Lambda(delegateType, expr, arg);
         }
-        private static IList<PropertyInfo> GetPropertiesFromType(Type type, List<string> queryProperty = null)
+        private static IList<PropertyInfo> GetPropertiesFromType(IList<PropertyInfo> searchableProperties, IList<string> queryProperties = null)
         {
-            return type.GetProperties().Where(x => queryProperty == null || queryProperty.Any(y=>y.ToLower() == x.Name.ToLower())).ToList();
+            return searchableProperties.Where(x => queryProperties == null || (queryProperties != null && queryProperties.Count == 0) || queryProperties.Any(y => y.ToLower() == x.Name.ToLower())).ToList();
         }
         private static MethodInfo GetMethodFromType(Type type, string methodName, int parameters, int genericArguments, List<Type> parameterTypes = null)
         {

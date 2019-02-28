@@ -1,10 +1,5 @@
-﻿using EntitySearch.Interfaces;
-using EntitySearch.StoreAPI.Core.Domain.Entities;
+﻿using EntitySearch.StoreAPI.Core.Domain.Entities;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductsByFilter
 {
@@ -13,6 +8,8 @@ namespace EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductsByF
         public GetProductsByFilterQuery() : base()
         {
             OrderBy = "ProductID";
+            this.SetRestrictProperty(x => x.Description)
+                .SetRestrictProperty(x => x.IsPublic);
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 
@@ -21,10 +22,11 @@ namespace EntitySearch.Interfaces
         int PageNumber { get; set; }
         string OrderBy { get; set; }
         Order Order { get; set; }
-
+        List<PropertyInfo> GetSearchableProperties(IList<PropertyInfo> typeProperties);
     }
     public interface IFilter<TSource> : IFilter
         where TSource : class
     {
+        IFilter<TSource> SetRestrictProperty<TKey>(Expression<Func<TSource, TKey>> keySelector);
     }
 }

@@ -18,16 +18,20 @@ namespace EntitySearch
 
             bindingContext.Model = Activator.CreateInstance(bindingContext.ModelType);
 
-            foreach (var property in bindingContext.ModelType.GetProperties())
+            foreach (var property in ((IFilter)bindingContext.Model).GetSearchableProperties(bindingContext.ModelType.GetProperties()))
             {
                 var valueProviderResult = bindingContext.ValueProvider.GetValue(property.Name);
                 if (valueProviderResult != ValueProviderResult.None)
                 {
-                    if (valueProviderResult.Length > 1)
+                    if (property.Name == "QueryProperties")
                     {
-                        if (property.Name == "QueryProperties")
+                        if (valueProviderResult.Length > 1)
                         {
                             valueProviderResult.Values.ToList().ForEach(value => ((IFilter)bindingContext.Model).QueryProperties.Add(value));
+                        }
+                        else
+                        {
+                            ((IFilter)bindingContext.Model).QueryProperties.Add(valueProviderResult.FirstValue);
                         }
                     }
                     else
@@ -41,7 +45,7 @@ namespace EntitySearch
                 {
                     if (property.Name == "FilterProperties")
                     {
-                        foreach (var filterProperty in bindingContext.ModelType.BaseType.GenericTypeArguments[0].GetProperties())
+                        foreach (var filterProperty in ((IFilter)bindingContext.Model).GetSearchableProperties(bindingContext.ModelType.BaseType.GenericTypeArguments[0].GetProperties()))
                         {
                             GetPropertyTypeBinders(filterProperty.PropertyType).ForEach(typeBinder =>
                             {
@@ -102,9 +106,9 @@ namespace EntitySearch
                     || propertyType == typeof(TimeSpan))
             {
                 comparationTypes.Add("_GreaterThan");
-                comparationTypes.Add("_SmallerThan");
-                comparationTypes.Add("_GreaterEqual");
-                comparationTypes.Add("_SmallerEqual");
+                comparationTypes.Add("_GreaterThanOrEqual");
+                comparationTypes.Add("_LessThan");
+                comparationTypes.Add("_LessThanOrEqual");
             }
 
             return comparationTypes.Distinct().ToList();
