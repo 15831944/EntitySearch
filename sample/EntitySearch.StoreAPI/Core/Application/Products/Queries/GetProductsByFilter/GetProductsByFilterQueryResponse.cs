@@ -9,6 +9,6 @@ namespace EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductsByF
     {
         public GetProductsByFilterQuery Request { get; set; }
         public int ResultCount { get; set; }
-        public List<GetProductsByFilterQueryItemResponse> Results { get; set; }
+        public List<GetProductsByFilterQueryResponseItem> Results { get; set; }
     }
 }

@@ -37,7 +37,7 @@ namespace EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductsByF
             {
                 Request = request,
                 ResultCount = resultCount,
-                Results = results.Select(result=>new GetProductsByFilterQueryItemResponse
+                Results = results.Select(result=>new GetProductsByFilterQueryResponseItem
                 {
                     ProductID = result.ProductID,
                     Name = result.Name,

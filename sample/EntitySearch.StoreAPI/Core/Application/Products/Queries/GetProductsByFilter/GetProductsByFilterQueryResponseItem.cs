@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductsByFilter
 {
-    public class GetProductsByFilterQueryItemResponse
+    public class GetProductsByFilterQueryResponseItem
     {
         public int ProductID { get; set; }
         public string Name { get; set; }
