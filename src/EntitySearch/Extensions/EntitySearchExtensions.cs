@@ -25,11 +25,15 @@ namespace EntitySearch.Extensions
             where TSource : class
         {
             if (string.IsNullOrWhiteSpace(filter.Query))
-            {
                 return source;
-            }
 
-            var queryTokens = BreakQuery(filter.Query, filter.QueryPhrase);
+            var queryTokens = GetTokens(filter.Query, filter.QueryPhrase);
+
+            filter.Query = string.Join("+", queryTokens.ToArray());
+
+            if (queryTokens.Count == 0)
+                return source;
+
             var criteriaExp = GenerateSearchCriteriaExpression(queryTokens, filter);
 
             return source.Where(criteriaExp);
@@ -391,9 +395,19 @@ namespace EntitySearch.Extensions
                     && (parameterTypes == null || parameterTypes.All(x => method.GetParameters().Select(parameter => parameter.ParameterType).Contains(x)))
                 );
         }
-        private static IList<string> BreakQuery(string query, bool queryPhrase)
+        private static IList<string> GetTokens(string query, bool queryPhrase)
         {
-            return queryPhrase ? new List<string> { query } : query.ToLower().Split(" ").ToList();
+            query = query.ToLower();
+
+            query = SearchConfiguration.GetSearchConfiguration().ValidateSupressCharacters(query);
+
+            IList<string> tokens = queryPhrase ? new List<string> { query } : query.Split(" ").ToList();
+
+            tokens = SearchConfiguration.GetSearchConfiguration().ValidateToken(tokens);
+
+            tokens = SearchConfiguration.GetSearchConfiguration().ValidateSupressTokens(tokens);
+
+            return tokens;
         }
     }
 }

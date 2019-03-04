@@ -31,8 +31,9 @@ namespace EntitySearch.StoreAPI
             services.AddDbContext<StoreContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
-            //services.AddEntitySearch()
-            //  .SetTokenMinimumSize(3);
+            services.AddEntitySearch()
+                .SetTokenMinimumSize(3)
+                .SetSupressTokens(new string[] { "the" });
 
             services.AddMvc();
         }
