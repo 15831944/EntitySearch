@@ -383,7 +383,12 @@ namespace EntitySearch.Extensions
         }
         private static IList<PropertyInfo> GetPropertiesFromType(IList<PropertyInfo> searchableProperties, IList<string> queryProperties = null)
         {
-            return searchableProperties.Where(x => queryProperties == null || (queryProperties != null && queryProperties.Count == 0) || queryProperties.Any(y => y.ToLower() == x.Name.ToLower())).ToList();
+            searchableProperties = searchableProperties.Where(x => queryProperties == null || (queryProperties != null && queryProperties.Count == 0) || queryProperties.Any(y => y.ToLower() == x.Name.ToLower())).ToList();
+            
+            if (searchableProperties == null || searchableProperties.Count == 0)
+                throw new Exception("There's no searchable property found!");
+
+            return searchableProperties;
         }
         private static MethodInfo GetMethodFromType(Type type, string methodName, int parameters, int genericArguments, List<Type> parameterTypes = null)
         {
