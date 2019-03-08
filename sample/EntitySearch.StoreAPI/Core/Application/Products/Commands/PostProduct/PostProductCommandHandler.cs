@@ -35,7 +35,18 @@ namespace EntitySearch.StoreAPI.Core.Application.Products.Commands.PostProduct
 
             return new PostProductCommandResponse
             {
-                Message = "Product successfully registered!"
+                Request = request,
+                Message = "Product successfully registered!",
+                Result = new PostProductCommandResponseItem
+                {
+                    ProductID = product.ProductID,
+                    Name = product.Name,
+                    Description = product.Description,
+                    Value = product.Value,
+                    Ammount = product.Ammount,
+                    RegistrationDate = product.RegistrationDate,
+                    IsPublic = product.IsPublic                
+                }
             };
         }
     }

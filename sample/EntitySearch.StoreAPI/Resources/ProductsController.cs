@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using EntitySearch.StoreAPI.Core.Application.Products.Commands.PostProduct;
+using EntitySearch.StoreAPI.Core.Application.Products.Commands.PutProduct;
 using EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductByID;
 using EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductsByFilter;
 using MediatR;
@@ -64,15 +65,15 @@ namespace EntitySearch.StoreAPI.Resources
 
         // PUT api/values/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        public async Task<ActionResult<PutProductCommandResponse>> Put(int id, [FromBody] PutProductCommand command)
         {
             try
             {
-                //return Ok("");
+                return Ok(await Mediator.Send(command.Put(id)));
             }
             catch (Exception ex)
             {
-                //return BadRequest(ex);
+                return BadRequest(ex);
             }
         }
 

@@ -34,8 +34,10 @@ namespace EntitySearch.Binders
                             ((IFilter)bindingContext.Model).QueryProperties.Add(valueProviderResult.FirstValue);
                         }
                     }
-                    else
+                    else if (property.Name == "Order")
                     {
+                        property.SetValue(bindingContext.Model, Convert.ToInt32(valueProviderResult.FirstValue));
+                    } else {
                         property.SetValue(bindingContext.Model, Convert.ChangeType(valueProviderResult.FirstValue, property.PropertyType));
                     }
 
