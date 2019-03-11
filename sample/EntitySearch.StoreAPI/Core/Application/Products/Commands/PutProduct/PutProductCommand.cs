@@ -1,17 +1,13 @@
-﻿using MediatR;
+﻿using EntitySearch.StoreAPI.Core.Domain.Entities;
+using MediatR;
+using ModelWrapper;
 using System;
 
 namespace EntitySearch.StoreAPI.Core.Application.Products.Commands.PutProduct
 {
-    public class PutProductCommand : IRequest<PutProductCommandResponse>
+    public class PutProductCommand : Wrap<Product>, IRequest<PutProductCommandResponse>
     {
-        public int ProductID { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public decimal Value { get; set; }
-        public int Ammount { get; set; }
-        public bool IsPublic { get; set; }
-
+        public int ID { get; set; }
         public PutProductCommand()
         {
 
@@ -19,7 +15,8 @@ namespace EntitySearch.StoreAPI.Core.Application.Products.Commands.PutProduct
 
         internal PutProductCommand Put(int id)
         {
-            this.ProductID = id;
+            this.ID = id;
+            
             return this;
         }
     }

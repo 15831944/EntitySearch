@@ -1,12 +1,8 @@
 ﻿using EntitySearch.Extensions;
-using EntitySearch.StoreAPI.Core.Domain.Entities;
-using EntitySearch.StoreAPI.Core.Infrastructures.Data.Contexts;
+using EntitySearch.StoreAPI.Core.Application.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,8 +10,8 @@ namespace EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductsByF
 {
     public class GetProductsByFilterQueryHandler : IRequestHandler<GetProductsByFilterQuery, GetProductsByFilterQueryResponse>
     {
-        private StoreContext Context { get; set; }
-        public GetProductsByFilterQueryHandler(StoreContext context)
+        private IStoreContext Context { get; set; }
+        public GetProductsByFilterQueryHandler(IStoreContext context)
         {
             Context = context;
         }

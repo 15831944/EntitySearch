@@ -1,4 +1,5 @@
-﻿using EntitySearch.StoreAPI.Core.Domain.Entities;
+﻿using EntitySearch.StoreAPI.Core.Application.Interfaces;
+using EntitySearch.StoreAPI.Core.Domain.Entities;
 using EntitySearch.StoreAPI.Core.Infrastructures.Data.Contexts;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
@@ -28,7 +29,7 @@ namespace EntitySearch.StoreAPI
 
             services.AddMediatR(assembly);
 
-            services.AddDbContext<StoreContext>(options =>
+            services.AddDbContext<IStoreContext, StoreContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
 
             services.AddEntitySearch()
@@ -39,7 +40,7 @@ namespace EntitySearch.StoreAPI
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, StoreContext context)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IStoreContext context)
         {
             if (env.IsDevelopment())
             {
@@ -58,7 +59,7 @@ namespace EntitySearch.StoreAPI
             app.UseMvc();
         }
 
-        private async Task ContextSeedAsync(StoreContext context)
+        private async Task ContextSeedAsync(IStoreContext context)
         {
             while (context.Products.Count() < 100_000)
             {
@@ -164,7 +165,7 @@ namespace EntitySearch.StoreAPI
             }
         }
 
-        private async Task SeedMoreDataAsync(StoreContext context)
+        private async Task SeedMoreDataAsync(IStoreContext context)
         {
             var phrases = Phrases();
             int numberOfPhrases = phrases.Count();

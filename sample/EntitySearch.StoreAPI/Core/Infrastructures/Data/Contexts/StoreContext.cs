@@ -1,9 +1,10 @@
-﻿using EntitySearch.StoreAPI.Core.Domain.Entities;
+﻿using EntitySearch.StoreAPI.Core.Application.Interfaces;
+using EntitySearch.StoreAPI.Core.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace EntitySearch.StoreAPI.Core.Infrastructures.Data.Contexts
 {
-    public class StoreContext : DbContext
+    public class StoreContext : DbContext, IStoreContext
     {
         protected StoreContext()
         {

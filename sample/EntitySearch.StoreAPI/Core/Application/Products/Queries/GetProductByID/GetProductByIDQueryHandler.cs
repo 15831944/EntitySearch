@@ -1,10 +1,6 @@
-﻿using EntitySearch.StoreAPI.Core.Domain.Entities;
-using EntitySearch.StoreAPI.Core.Infrastructures.Data.Contexts;
+﻿using EntitySearch.StoreAPI.Core.Application.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,8 +9,8 @@ namespace EntitySearch.StoreAPI.Core.Application.Products.Queries.GetProductByID
     public class GetProductByIDQueryHandler : IRequestHandler<GetProductByIDQuery, GetProductByIDQueryResponse>
     {
 
-        private StoreContext Context { get; set; }
-        public GetProductByIDQueryHandler(StoreContext context)
+        private IStoreContext Context { get; set; }
+        public GetProductByIDQueryHandler(IStoreContext context)
         {
             Context = context;
         }

@@ -1,9 +1,7 @@
-﻿using EntitySearch.StoreAPI.Core.Domain.Entities;
-using EntitySearch.StoreAPI.Core.Infrastructures.Data.Contexts;
+﻿using EntitySearch.StoreAPI.Core.Application.Interfaces;
+using EntitySearch.StoreAPI.Core.Domain.Entities;
 using MediatR;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,8 +9,8 @@ namespace EntitySearch.StoreAPI.Core.Application.Products.Commands.PostProduct
 {
     public class PostProductCommandHandler : IRequestHandler<PostProductCommand, PostProductCommandResponse>
     {
-        private StoreContext Context { get; set; }
-        public PostProductCommandHandler(StoreContext context)
+        private IStoreContext Context { get; set; }
+        public PostProductCommandHandler(IStoreContext context)
         {
             Context = context;
         }
