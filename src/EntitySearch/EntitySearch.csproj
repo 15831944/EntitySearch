@@ -2,6 +2,15 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
+    <Authors>https://github.com/isilveira</Authors>
+    <Copyright>Copyright (c) Baysoft LTDA. All rights reserved.</Copyright>
+    <Company>https://github.com/BAYSOFT-001</Company>
+    <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/isilveira/EntitySearch</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/isilveira/EntitySearch</RepositoryUrl>
+    <Description>Lightweight library that extends the IQueryable&lt;T&gt; interface to create queries searching through every entity property.</Description>
+    <PackageReleaseNotes />
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
