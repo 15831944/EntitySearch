@@ -37,7 +37,9 @@ namespace EntitySearch.Binders
                     else if (property.Name == "Order")
                     {
                         property.SetValue(bindingContext.Model, Convert.ToInt32(valueProviderResult.FirstValue));
-                    } else {
+                    }
+                    else
+                    {
                         property.SetValue(bindingContext.Model, Convert.ChangeType(valueProviderResult.FirstValue, property.PropertyType));
                     }
 
@@ -90,6 +92,11 @@ namespace EntitySearch.Binders
         {
             List<string> comparationTypes = new List<string>();
 
+            if (Nullable.GetUnderlyingType(propertyType)!=null)
+            {
+                propertyType = Nullable.GetUnderlyingType(propertyType);
+            }
+
             comparationTypes.Add("");
             comparationTypes.Add("_Not");
             if (propertyType == typeof(string) || propertyType == typeof(char))
@@ -124,11 +131,24 @@ namespace EntitySearch.Binders
         {
             try
             {
+                if (Nullable.GetUnderlyingType(typeTo) != null)
+                {
+                    if (!string.IsNullOrWhiteSpace(value) && value == "null")
+                    {
+                        changed = true;
+                        return Activator.CreateInstance(typeTo);
+                    }
+                    else
+                    {
+                        typeTo = Nullable.GetUnderlyingType(typeTo);
+                    }
+                }
+
                 object convertedObject = Convert.ChangeType(value, typeTo);
                 changed = true;
                 return convertedObject;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 changed = false;
                 return Activator.CreateInstance(typeTo);

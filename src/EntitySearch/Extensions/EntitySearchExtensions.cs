@@ -51,6 +51,11 @@ namespace EntitySearch.Extensions
                 throw new ArgumentNullException(nameof(filter));
             }
 
+            if (string.IsNullOrWhiteSpace(filter.OrderBy))
+            {
+                throw new ArgumentNullException(nameof(filter.OrderBy));
+            }
+
             Type type = typeof(TSource);
             Expression lambda = GenereteLambdaExpression<TSource>(ref type, filter.OrderBy);
             MethodInfo orderMethod;
@@ -118,14 +123,35 @@ namespace EntitySearch.Extensions
             foreach (var propertyInfo in GetPropertiesFromType(filter.GetSearchableProperties(typeof(TSource).GetProperties()), filter.QueryProperties))
             {
                 Expression memberExp = Expression.MakeMemberAccess(xExp, propertyInfo);
-
+                Expression memberHasValue = null;
                 if (memberExp.Type != typeof(string))
                 {
+                    if(Nullable.GetUnderlyingType(memberExp.Type) != null)
+                    {
+                        memberHasValue = Expression.MakeMemberAccess(memberExp, memberExp.Type.GetProperty("HasValue"));
+                        memberHasValue = filter.QueryStrict ? memberHasValue : Expression.Not(memberHasValue);
+                    }
+                    else if (memberExp.Type.IsClass)
+                    {
+                        memberHasValue = Expression.Equal(memberExp, Expression.Constant(null));
+                        memberHasValue = !filter.QueryStrict ? memberHasValue : Expression.Not(memberHasValue);
+                    }
                     memberExp = Expression.Call(memberExp, GetMethodFromType(memberExp.Type, "ToString", 0, 0));
+                }
+                else
+                {
+                    memberHasValue = Expression.Equal(memberExp, Expression.Constant(null));
+                    memberHasValue = !filter.QueryStrict ? memberHasValue : Expression.Not(memberHasValue);
                 }
 
                 memberExp = Expression.Call(memberExp, GetMethodFromType(memberExp.Type, "ToLower", 0, 0));
                 List<Expression> andExpressions = new List<Expression>();
+
+                if (memberHasValue != null)
+                {
+                    //andExpressions.Add(memberHasValue);
+                }
+
                 foreach (var token in tokens)
                 {
                     andExpressions.Add(GenerateStringContainsExpression(memberExp, Expression.Constant(token, typeof(string))));
@@ -191,7 +217,7 @@ namespace EntitySearch.Extensions
         }
         private static Expression GenerateFilterStrictExpression(Expression memberExp, KeyValuePair<string, object> filterProperty, PropertyInfo property)
         {
-            if (filterProperty.Value.GetType().IsGenericType && filterProperty.Value.GetType().GetGenericTypeDefinition() == typeof(List<>))
+            if (filterProperty.Value!= null && filterProperty.Value.GetType().IsGenericType && filterProperty.Value.GetType().GetGenericTypeDefinition() == typeof(List<>))
             {
                 List<Expression> orExpressions = new List<Expression>();
                 foreach (var value in ((List<object>)filterProperty.Value))
@@ -383,6 +409,7 @@ namespace EntitySearch.Extensions
         }
         private static IList<PropertyInfo> GetPropertiesFromType(IList<PropertyInfo> searchableProperties, IList<string> queryProperties = null)
         {
+            //searchableProperties = searchableProperties.Where(x => x.PropertyType.IsValueType).ToList();
             searchableProperties = searchableProperties.Where(x => queryProperties == null || (queryProperties != null && queryProperties.Count == 0) || queryProperties.Any(y => y.ToLower() == x.Name.ToLower())).ToList();
             
             if (searchableProperties == null || searchableProperties.Count == 0)

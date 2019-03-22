@@ -26,6 +26,7 @@ namespace EntitySearch
         public Filter()
         {
             FilterProperties = new Dictionary<string, object>();
+            NonSearchableProperties = new List<PropertyInfo>();
             QueryProperties = new List<string>();
             PageSize = 10;
             PageNumber = 0;
@@ -33,9 +34,6 @@ namespace EntitySearch
         }
         public IFilter<TEntity> SetRestrictProperty<TKey>(Expression<Func<TEntity, TKey>> keySelector)
         {
-            if (NonSearchableProperties == null)
-                NonSearchableProperties = new List<PropertyInfo>();
-
             if (keySelector.Body is MemberExpression && (keySelector.Body as MemberExpression).Member is PropertyInfo)
                 NonSearchableProperties.Add(((keySelector.Body as MemberExpression).Member as PropertyInfo));
 
