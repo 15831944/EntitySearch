@@ -53,7 +53,12 @@ namespace EntitySearch.Extensions
 
             if (string.IsNullOrWhiteSpace(filter.OrderBy))
             {
-                throw new ArgumentNullException(nameof(filter.OrderBy));
+                var someProperty = typeof(TSource).GetProperties().FirstOrDefault();
+                if (someProperty==null)
+                {
+                    throw new ArgumentNullException(nameof(filter.OrderBy));
+                }
+                filter.OrderBy = someProperty.Name;
             }
 
             Type type = typeof(TSource);
