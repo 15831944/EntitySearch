@@ -11,7 +11,7 @@ namespace EntitySearch.Interfaces
         ASCENDING,
         DESCENEDING
     }
-    public interface IFilter
+    public interface IEntitySearch
     {
         Dictionary<string, object> FilterProperties { get; set; }
         string Query { get; set; }
@@ -24,9 +24,9 @@ namespace EntitySearch.Interfaces
         Order Order { get; set; }
         List<PropertyInfo> GetSearchableProperties(IList<PropertyInfo> typeProperties);
     }
-    public interface IFilter<TSource> : IFilter
+    public interface IEntitySearch<TSource> : IEntitySearch
         where TSource : class
     {
-        IFilter<TSource> SetRestrictProperty<TKey>(Expression<Func<TSource, TKey>> keySelector);
+        IEntitySearch<TSource> SetRestrictProperty<TKey>(Expression<Func<TSource, TKey>> keySelector);
     }
 }

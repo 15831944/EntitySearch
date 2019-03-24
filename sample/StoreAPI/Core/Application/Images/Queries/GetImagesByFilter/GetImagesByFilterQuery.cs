@@ -4,7 +4,7 @@ using StoreAPI.Core.Domain.Entities;
 
 namespace StoreAPI.Core.Application.Images.Queries.GetImagesByFilter
 {
-    public class GetImagesByFilterQuery : Filter<Image>, IRequest<GetImagesByFilterQueryResponse>
+    public class GetImagesByFilterQuery : EntitySearch<Image>, IRequest<GetImagesByFilterQueryResponse>
     {
         public GetImagesByFilterQuery()
         {

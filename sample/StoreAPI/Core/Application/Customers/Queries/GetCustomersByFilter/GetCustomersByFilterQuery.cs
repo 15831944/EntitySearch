@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace StoreAPI.Core.Application.Customers.Queries.GetCustomersByFilter
 {
-    public class GetCustomersByFilterQuery : Filter<Customer>, IRequest<GetCustomersByFilterQueryResponse>
+    public class GetCustomersByFilterQuery : EntitySearch<Customer>, IRequest<GetCustomersByFilterQueryResponse>
     {
         public GetCustomersByFilterQuery()
         {

@@ -11,6 +11,9 @@
     <Description>Lightweight library that extends the IQueryable&lt;T&gt; interface to create queries searching through every entity property.</Description>
     <PackageReleaseNotes />
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageTags>EntitySearch, Entity, Search, EntityFrameworkCore, Queryable, Text Search, Query, Queries, Pagination.</PackageTags>
+    <NeutralLanguage>en</NeutralLanguage>
+    <PackageIconUrl>https://raw.githubusercontent.com/isilveira/EntitySearch/master/docs/logo/Logo_EntitySearch.jpg</PackageIconUrl>
   </PropertyGroup>
 
   <ItemGroup>

@@ -5,7 +5,7 @@ using System;
 
 namespace StoreAPI.Core.Application.OrderedProducts.Queries.GetOrderedProductsByFilter
 {
-    public class GetOrderedProductsByFilterQuery : Filter<OrderedProduct>, IRequest<GetOrderedProductsByFilterQueryResponse>
+    public class GetOrderedProductsByFilterQuery : EntitySearch<OrderedProduct>, IRequest<GetOrderedProductsByFilterQueryResponse>
     {
         public GetOrderedProductsByFilterQuery()
         {

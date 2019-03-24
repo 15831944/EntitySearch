@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace EntitySearch.Binders
 {
-    public class FilterBinder : IModelBinder
+    public class EntitySearchBinder : IModelBinder
     {
         public Task BindModelAsync(ModelBindingContext bindingContext)
         {
@@ -18,7 +18,7 @@ namespace EntitySearch.Binders
 
             bindingContext.Model = Activator.CreateInstance(bindingContext.ModelType);
 
-            foreach (var property in ((IFilter)bindingContext.Model).GetSearchableProperties(bindingContext.ModelType.GetProperties()))
+            foreach (var property in ((IEntitySearch)bindingContext.Model).GetSearchableProperties(bindingContext.ModelType.GetProperties()))
             {
                 var valueProviderResult = bindingContext.ValueProvider.GetValue(property.Name);
                 if (valueProviderResult != ValueProviderResult.None)
@@ -27,11 +27,11 @@ namespace EntitySearch.Binders
                     {
                         if (valueProviderResult.Length > 1)
                         {
-                            valueProviderResult.Values.ToList().ForEach(value => ((IFilter)bindingContext.Model).QueryProperties.Add(value));
+                            valueProviderResult.Values.ToList().ForEach(value => ((IEntitySearch)bindingContext.Model).QueryProperties.Add(value));
                         }
                         else
                         {
-                            ((IFilter)bindingContext.Model).QueryProperties.Add(valueProviderResult.FirstValue);
+                            ((IEntitySearch)bindingContext.Model).QueryProperties.Add(valueProviderResult.FirstValue);
                         }
                     }
                     else if (property.Name == "Order")
@@ -49,7 +49,7 @@ namespace EntitySearch.Binders
                 {
                     if (property.Name == "FilterProperties")
                     {
-                        foreach (var filterProperty in ((IFilter)bindingContext.Model).GetSearchableProperties(bindingContext.ModelType.BaseType.GenericTypeArguments[0].GetProperties()))
+                        foreach (var filterProperty in ((IEntitySearch)bindingContext.Model).GetSearchableProperties(bindingContext.ModelType.BaseType.GenericTypeArguments[0].GetProperties()))
                         {
                             GetPropertyTypeBinders(filterProperty.PropertyType).ForEach(typeBinder =>
                             {
@@ -70,7 +70,7 @@ namespace EntitySearch.Binders
 
                                     if (listObjects.Count > 0)
                                     {
-                                        ((IFilter)bindingContext.Model).FilterProperties.Add(filterName, listObjects.Count > 1 ? listObjects : listObjects.FirstOrDefault());
+                                        ((IEntitySearch)bindingContext.Model).FilterProperties.Add(filterName, listObjects.Count > 1 ? listObjects : listObjects.FirstOrDefault());
                                     }
                                 }
                             });

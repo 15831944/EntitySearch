@@ -9,8 +9,8 @@ using System.Reflection;
 
 namespace EntitySearch
 {
-    [ModelBinder(BinderType = typeof(FilterBinder))]
-    public class Filter<TEntity> : IFilter<TEntity>
+    [ModelBinder(BinderType = typeof(EntitySearchBinder))]
+    public class EntitySearch<TEntity> : IEntitySearch<TEntity>
         where TEntity : class
     {
         public Dictionary<string, object> FilterProperties { get; set; }
@@ -23,7 +23,7 @@ namespace EntitySearch
         public int PageNumber { get; set; }
         public string OrderBy { get; set; }
         public Order Order { get; set; }
-        public Filter()
+        public EntitySearch()
         {
             FilterProperties = new Dictionary<string, object>();
             NonSearchableProperties = new List<PropertyInfo>();
@@ -32,7 +32,7 @@ namespace EntitySearch
             PageNumber = 0;
             Order = Order.ASCENDING;
         }
-        public IFilter<TEntity> SetRestrictProperty<TKey>(Expression<Func<TEntity, TKey>> keySelector)
+        public IEntitySearch<TEntity> SetRestrictProperty<TKey>(Expression<Func<TEntity, TKey>> keySelector)
         {
             if (keySelector.Body is MemberExpression && (keySelector.Body as MemberExpression).Member is PropertyInfo)
                 NonSearchableProperties.Add(((keySelector.Body as MemberExpression).Member as PropertyInfo));
